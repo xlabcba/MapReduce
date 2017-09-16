@@ -20,7 +20,7 @@ public class StationRecord implements Cloneable {
 
 	public void addRecord(double temp, int count) {
 		if (isFibonacciOn) {
-			fibonacci(17);
+			Utils.fibonacci(17);
 		}
 		this.sum += temp;
 		this.count += count;
@@ -28,7 +28,7 @@ public class StationRecord implements Cloneable {
 
 	public synchronized void addRecordSafe(double temp, int count) {
 		if (isFibonacciOn) {
-			fibonacci(17);
+			Utils.fibonacci(17);
 		}
 		this.sum += temp;
 		this.count += count;
@@ -41,13 +41,6 @@ public class StationRecord implements Cloneable {
 
 	public double calcAverage() {
 		return this.sum / this.count;
-	}
-	
-	public static int fibonacci(int number) {
-		if (number == 1 || number == 2) {
-			return 1;
-		} 
-		return fibonacci(number - 1) + fibonacci(number - 2);
 	}
 
 	public String getStationId() {
