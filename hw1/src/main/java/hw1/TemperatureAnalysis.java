@@ -48,10 +48,11 @@ public class TemperatureAnalysis {
 		}
 
 		// Calculate averages
+		// System.out.println("[Debug] ******************** SUMMARY ******************");
 		for (StationRecord station : stations.values()) {
 			averages.put(station.getStationId(), station.calcAverage());
-			System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
-					+ averages.get(station.getStationId()) + "]");
+			// System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
+			// 		+ averages.get(station.getStationId()) + "]");
 		}
 
 		return averages;
@@ -93,8 +94,8 @@ public class TemperatureAnalysis {
 		// Calculate averages
 		for (StationRecord station : stations.values()) {
 			averages.put(station.getStationId(), station.calcAverage());
-			System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
-					+ averages.get(station.getStationId()) + "]");
+			// System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
+			// 		+ averages.get(station.getStationId()) + "]");
 		}
 
 		return averages;
@@ -136,8 +137,8 @@ public class TemperatureAnalysis {
 		// Calculate averages
 		for (StationRecord station : stations.values()) {
 			averages.put(station.getStationId(), station.calcAverage());
-			System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
-					+ averages.get(station.getStationId()) + "]");
+			// System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
+			// 		+ averages.get(station.getStationId()) + "]");
 		}
 
 		return averages;
@@ -179,12 +180,12 @@ public class TemperatureAnalysis {
 		}
 
 		// Merge Results
-		System.out.println("[Debug] Merging reults...");
+		// System.out.println("[Debug] Merging reults...");
 		int threadIndex = 0;
 		for (Map<String, StationRecord> currThreadStations : threadStations) {
-			System.out.println("[Debug] Thread" + threadIndex++);
+			// System.out.println("[Debug] Thread" + threadIndex++);
 			for (StationRecord currStation : currThreadStations.values()) {
-				System.out.println("[Debug] " + currStation);
+				// System.out.println("[Debug] " + currStation);
 				if (!stations.containsKey(currStation.getStationId())) {
 					stations.put(currStation.getStationId(), (StationRecord) currStation.clone());
 				} else {
@@ -196,8 +197,8 @@ public class TemperatureAnalysis {
 		// Calculate averages
 		for (StationRecord station : stations.values()) {
 			averages.put(station.getStationId(), station.calcAverage());
-			System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
-					+ averages.get(station.getStationId()) + "]");
+			// System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
+			// 		+ averages.get(station.getStationId()) + "]");
 		}
 
 		return averages;
@@ -207,19 +208,14 @@ public class TemperatureAnalysis {
 
 		// Read file from .csv.gz
 		FileProcessor fr = new FileProcessor();
-		List<String> lines = fr.readFile("1763.csv.gz");
+		List<String> lines = fr.readFile("1912.csv.gz");
 
-		for (String line : lines) {
-			System.out.println("[Debug] " + line);
-		}
-
+	    
 		// Calculate Average
-		// String mode = "sequential";
-		// String mode = "noLock";
-		// String mode = "coarseLock";
-		// String mode = "fineLock";
-		String mode = "NoSharing";
-		if (mode.equalsIgnoreCase("sequential")) {
+		String mode = args[0];
+		
+		if (mode.equalsIgnoreCase("sequential") || mode.equalsIgnoreCase("all")) {
+			System.out.println("[Debug] Calculating Sequential...");
 			long minTime = Long.MAX_VALUE;
 			long maxTime = Long.MIN_VALUE;
 			double sumTime = 0;
@@ -235,7 +231,8 @@ public class TemperatureAnalysis {
 			System.out.println("[Debug] Sequential Mode" + "[averageTime=" + sumTime / loopNum + "ms, minTime="
 					+ minTime + "ms, maxTime=" + maxTime + "ms]");
 		}
-		if (mode.equalsIgnoreCase("noLock")) {
+		if (mode.equalsIgnoreCase("nolock") || mode.equalsIgnoreCase("all")) {
+			System.out.println("[Debug] Calculating No Lock...");
 			long minTime = Long.MAX_VALUE;
 			long maxTime = Long.MIN_VALUE;
 			double sumTime = 0;
@@ -251,7 +248,8 @@ public class TemperatureAnalysis {
 			System.out.println("[Debug] No Lock Mode" + "[averageTime=" + sumTime / loopNum + "ms, minTime="
 					+ minTime + "ms, maxTime=" + maxTime + "ms]");
 		}
-		if (mode.equalsIgnoreCase("coarseLock")) {
+		if (mode.equalsIgnoreCase("coarselock") || mode.equalsIgnoreCase("all")) {
+			System.out.println("[Debug] Calculating Coarse Lock...");
 			long minTime = Long.MAX_VALUE;
 			long maxTime = Long.MIN_VALUE;
 			double sumTime = 0;
@@ -267,7 +265,8 @@ public class TemperatureAnalysis {
 			System.out.println("[Debug] Coarse Lock Mode" + "[averageTime=" + sumTime / loopNum + "ms, minTime="
 					+ minTime + "ms, maxTime=" + maxTime + "ms]");
 		}
-		if (mode.equalsIgnoreCase("fineLock")) {
+		if (mode.equalsIgnoreCase("finelock") || mode.equalsIgnoreCase("all")) {
+			System.out.println("[Debug] Calculating Fine Lock...");
 			long minTime = Long.MAX_VALUE;
 			long maxTime = Long.MIN_VALUE;
 			double sumTime = 0;
@@ -283,7 +282,8 @@ public class TemperatureAnalysis {
 			System.out.println("[Debug] Fine Lock Mode" + "[averageTime=" + sumTime / loopNum + "ms, minTime=" + minTime
 					+ "ms, maxTime=" + maxTime + "ms]");
 		}
-		if (mode.equalsIgnoreCase("NoSharing")) {
+		if (mode.equalsIgnoreCase("nosharing") || mode.equalsIgnoreCase("all")) {
+			System.out.println("[Debug] Calculating No Sharing...");
 			long minTime = Long.MAX_VALUE;
 			long maxTime = Long.MIN_VALUE;
 			double sumTime = 0;

@@ -18,41 +18,25 @@ public class SequentialCalculation {
 			
 			// Parse line
 			String[] entry = line.split(separator);
-			System.out.println("[Debug] Line" + (counter++) + ":" + "[stationId=" + entry[0] + ", date=" + entry[1]
-					+ ", type=" + entry[2] + ", value=" + entry[3]);
-			if (!isValidRecord(line)) continue;
+			if (!Utils.isValidRecord(line)) continue;
 			
 			// Update record
-			System.out.println("[Debug] Updating station records...");
+			String stationId = entry[0];
+			Double temperature = Double.parseDouble(entry[3]);
 			if (!stations.containsKey(entry[0])) {
-				stations.put(entry[0], new StationRecord(entry[0], Double.parseDouble(entry[3]), 1));
+				stations.put(entry[0], new StationRecord(stationId, temperature, 1));
 			} else {
-				stations.get(entry[0]).addRecord(Double.parseDouble(entry[3]), 1);
+				stations.get(entry[0]).addRecord(temperature, 1);
 			}		
 		}
 		
 		// Calculate averages
+		// System.out.println("[Debug] ******************** SUMMARY ******************");
 		for (StationRecord station : stations.values()) {
 			averages.put(station.getStationId(), station.calcAverage());
-			System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average=" + averages.get(station.getStationId()) + "]");
+			// System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average=" + averages.get(station.getStationId()) + "]");
 		}
 
 		return averages;
-	}
-	
-	public boolean isValidRecord(String line) {
-		// [TODO] Double check understanding correctly or not!
-		String separator = ",";
-		String[] entry = line.split(separator);
-		if (entry.length < 4) {
-			return false;
-		}
-		if (!entry[2].equalsIgnoreCase("TMAX")) {
-			return false;
-		}
-		if (!entry[3].matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+")) {
-			return false;
-		}
-		return true;
 	}
 }
