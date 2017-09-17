@@ -4,22 +4,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SequentialCalculation {
+public class SequentialCalculation extends AbstractCalculation {
 	
 	private Map<String, StationRecord> stations = new HashMap<String, StationRecord>();
 	private Map<String, Double> averages = new HashMap<String, Double>();
 
-	public Map<String, Double> calculate(List<String> lines) {
-
-		String separator = ",";
-		int counter = 1;
-
+	public void calculate(List<String> lines) {
 		for (String line : lines) {
-			
-			// Parse line
-			String[] entry = line.split(separator);
+			// Validate record
 			if (!Utils.isValidRecord(line)) continue;
-			
+			// Parse line
+			String[] entry = line.split(Constants.CSV_SEPARATOR);		
 			// Update record
 			String stationId = entry[0];
 			Double temperature = Double.parseDouble(entry[3]);
@@ -28,15 +23,22 @@ public class SequentialCalculation {
 			} else {
 				stations.get(entry[0]).addRecord(temperature, 1);
 			}		
-		}
-		
+		}	
 		// Calculate averages
-		// System.out.println("[Debug] ******************** SUMMARY ******************");
-		for (StationRecord station : stations.values()) {
-			averages.put(station.getStationId(), station.calcAverage());
-			// System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average=" + averages.get(station.getStationId()) + "]");
+		calculateAverages();
+	}
+	
+	private void calculateAverages() {
+		for (StationRecord station : this.stations.values()) {
+			this.averages.put(station.getStationId(), station.calcAverage());
 		}
+	}
 
-		return averages;
+	public void printSummary() {
+		System.out.println("[Debug] ******************** SUMMARY ******************");
+		for (StationRecord station : this.stations.values()) {
+			System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
+					+ averages.get(station.getStationId()) + "]");
+		}
 	}
 }

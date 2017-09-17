@@ -20,6 +20,22 @@ public class Utils {
 		}
 		return true;
 	}
+	
+	public static int[][] getPartitionIndice(int inputSize) {
+		// [TODO] check max thread #;
+		int tasksPerThread = inputSize / Constants.THREAD_NUM;
+		int remainTasks = inputSize % Constants.THREAD_NUM;
+		// [TODO] check assignment of tasks
+		int[][] indice = new int[Constants.THREAD_NUM][2];
+		int start = 0, end;
+		for (int i = 0; i < Constants.THREAD_NUM; i++) {
+			end = start + tasksPerThread + (remainTasks-- > 0 ? 1 : 0);
+			indice[i][0] = start;
+			indice[i][1] = end;
+			start = end;
+		}
+		return indice;
+	}
 		
 	public static int fibonacci(int number) {
 		if (number == 1 || number == 2) {
