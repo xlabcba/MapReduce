@@ -11,4 +11,8 @@ public abstract class AbstractCalculation {
 
 	public abstract void calculate(List<String> lines);
 	
+	public abstract void calculateAverages();
+	
+	public abstract void printSummary();
+	
 }

@@ -11,22 +11,26 @@ jar:
 	mvn clean install
 
 calc-sequential:
-	java -Xmx1536m -jar ${jar.path} sequential ${path}
+	java -Xmx1536m -jar ${jar.path} -mode sequential -filename ${FILENAME}
 
 calc-nolock:
-	java -Xmx1536m -jar ${jar.path} nolock ${path}
+	java -Xmx1536m -jar ${jar.path} -mode nolock -filename ${FILENAME}
 
 calc-coarselock:
-	java -Xmx1536m -jar ${jar.path} coarselock ${path}
+	java -Xmx1536m -jar ${jar.path} -mode coarselock -filename ${FILENAME}
 
 calc-finelock:
-	java -Xmx1536m -jar ${jar.path} finelock ${path}
+	java -Xmx1536m -jar ${jar.path} -mode finelock -filename ${FILENAME}
 
 calc-nosharing:
-	java -Xmx1536m -jar ${jar.path} nosharing ${path}
+	java -Xmx1536m -jar ${jar.path} -mode nosharing -filename ${FILENAME}
 
 calc-all:
-	java -Xmx1536m -jar ${jar.path} all ${path}
+	java -Xmx1536m -jar ${jar.path} -mode sequential -filename ${FILENAME}
+	java -Xmx1536m -jar ${jar.path} -mode nolock -filename ${FILENAME}
+	java -Xmx1536m -jar ${jar.path} -mode coarselock -filename ${FILENAME}
+	java -Xmx1536m -jar ${jar.path} -mode finelock -filename ${FILENAME}
+	java -Xmx1536m -jar ${jar.path} -mode nosharing -filename ${FILENAME}
 
-# Package for release.
-	
+calc:
+	java -Xmx1536m -jar ${jar.path} -mode ${MODE} -filename ${FILENAME}

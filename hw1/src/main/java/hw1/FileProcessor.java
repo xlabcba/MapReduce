@@ -1,12 +1,14 @@
 package hw1;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,12 +16,12 @@ import java.util.zip.GZIPInputStream;
 
 public class FileProcessor {
 
-	private static final String INPUT_FILE_PATH = "/Users/lixie/Documents/MapReduce/hw1/inputs/";
+	private static final String INPUT_FILE_PATH = "/input/";
 
 	/**
 	 * Read .csv.gz line by line
 	 */
-	public List<String> readFile(String gzFileName) {
+	public static List<String> readFile(String gzFileName) {
 
 		List<String> lines = new ArrayList<String>();
 		BufferedReader br = null;
@@ -27,9 +29,11 @@ public class FileProcessor {
 
 		try {
 
-			System.out.println("[Debug] Start Reading...");
+			// System.out.println("[Debug] Start Reading...");			
+			String root = new File("").getAbsolutePath();
+			System.out.println("Path:" + root);
 
-			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(INPUT_FILE_PATH + gzFileName));
+			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(root + INPUT_FILE_PATH + gzFileName));
 
 			br = new BufferedReader(new InputStreamReader(gzis));
 			while ((line = br.readLine()) != null) {
@@ -37,7 +41,7 @@ public class FileProcessor {
 			}
 
 			gzis.close();
-			System.out.println("[Debug] Done Reading!");
+			// System.out.println("[Debug] Done Reading!");
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -57,7 +61,7 @@ public class FileProcessor {
 	/**
 	 * Unzip .csv.gz & save as .csv file & read line by line
 	 */
-	public List<String> saveAndReadFile(String gzFileName) {
+	public static List<String> saveAndReadFile(String gzFileName) {
 
 		List<String> lines = new ArrayList<String>();
 		String line = "";
@@ -72,10 +76,10 @@ public class FileProcessor {
 
 		try {
 
-			System.out.println("[Debug] Start Unzip...");
+			// System.out.println("[Debug] Start Unzip...");
 
-			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(INPUT_FILE_PATH + gzFileName));
-			FileOutputStream out = new FileOutputStream(INPUT_FILE_PATH + csvFileName);
+			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(Paths.get(gzFileName).toString()));
+			FileOutputStream out = new FileOutputStream(Paths.get(gzFileName).getParent().toString() + csvFileName);
 
 			int len;
 			while ((len = gzis.read(buffer)) > 0) {
@@ -85,7 +89,7 @@ public class FileProcessor {
 			gzis.close();
 			out.close();
 
-			System.out.println("[Debug] Done unzip!");
+			// System.out.println("[Debug] Done unzip!");
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -93,14 +97,14 @@ public class FileProcessor {
 
 		try {
 
-			System.out.println("[Debug] Start Reading csv...");
+			// System.out.println("[Debug] Start Reading csv...");
 
-			BufferedReader br = new BufferedReader(new FileReader(INPUT_FILE_PATH + csvFileName));
+			BufferedReader br = new BufferedReader(new FileReader(Paths.get(gzFileName).getParent().toString() + csvFileName));
 			while ((line = br.readLine()) != null) {
 				lines.add(line);
 			}
 
-			System.out.println("[Debug] Done Reading csv!");
+			// System.out.println("[Debug] Done Reading csv!");
 
 		} catch (IOException e) {
 			e.printStackTrace();

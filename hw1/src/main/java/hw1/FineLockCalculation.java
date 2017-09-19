@@ -11,10 +11,13 @@ public class FineLockCalculation extends AbstractCalculation {
 	
 	private Map<String, StationRecord> stations = new HashMap<String, StationRecord>();
 	private Map<String, Double> averages = new HashMap<String, Double>();
+	private long runtime = 0;
 
 	public void calculate(List<String> lines) {
 
 		int[][] indice= Utils.getPartitionIndice(lines.size());
+		
+		long startTime = System.currentTimeMillis();
 		
 		List<Thread> threads = new ArrayList<Thread>();
 		for (int i = 0; i < Constants.THREAD_NUM; i++) {
@@ -34,6 +37,12 @@ public class FineLockCalculation extends AbstractCalculation {
 		}
 		// Calculate averages
 		calculateAverages();
+		
+		runtime = System.currentTimeMillis() - startTime;
+		
+		if (Constants.PRINT_SUMMARY) {
+			printSummary();
+		}
 	}
 	
 	class Worker implements Runnable {
@@ -56,6 +65,7 @@ public class FineLockCalculation extends AbstractCalculation {
 				String stationId = entry[0];
 				Double temperature = Double.parseDouble(entry[3]);
 				// Update record
+				// [TODO] How to entry-level locking without locking stations?
 				synchronized (stations) {
 					if (!stations.containsKey(entry[0])) {
 						stations.put(entry[0], new StationRecord(stationId, temperature, 1));
@@ -67,10 +77,14 @@ public class FineLockCalculation extends AbstractCalculation {
 		}
 	}
 	
-	private void calculateAverages() {
+	public void calculateAverages() {
 		for (StationRecord station : this.stations.values()) {
 			this.averages.put(station.getStationId(), station.calcAverage());
 		}
+	}
+	
+	public long getRuntime() {
+		return this.runtime;
 	}
 
 	public void printSummary() {

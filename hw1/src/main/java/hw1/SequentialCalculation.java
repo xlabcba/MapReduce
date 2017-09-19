@@ -8,8 +8,12 @@ public class SequentialCalculation extends AbstractCalculation {
 	
 	private Map<String, StationRecord> stations = new HashMap<String, StationRecord>();
 	private Map<String, Double> averages = new HashMap<String, Double>();
+	private long runtime = 0;
 
 	public void calculate(List<String> lines) {
+		
+		long startTime = System.currentTimeMillis();
+		
 		for (String line : lines) {
 			// Validate record
 			if (!Utils.isValidRecord(line)) continue;
@@ -26,12 +30,22 @@ public class SequentialCalculation extends AbstractCalculation {
 		}	
 		// Calculate averages
 		calculateAverages();
+		
+		runtime = System.currentTimeMillis() - startTime;
+		
+		if (Constants.PRINT_SUMMARY) {
+			printSummary();
+		}
 	}
 	
-	private void calculateAverages() {
+	public void calculateAverages() {
 		for (StationRecord station : this.stations.values()) {
 			this.averages.put(station.getStationId(), station.calcAverage());
 		}
+	}
+	
+	public long getRuntime() {
+		return this.runtime;
 	}
 
 	public void printSummary() {
