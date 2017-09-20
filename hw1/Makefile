@@ -13,9 +13,6 @@ jar:
 calc-sequential:
 	java -Xmx1536m -jar ${jar.path} -mode sequential -filename ${FILENAME}
 
-calc-nolock:
-	java -Xmx1536m -jar ${jar.path} -mode nolock -filename ${FILENAME}
-
 calc-coarselock:
 	java -Xmx1536m -jar ${jar.path} -mode coarselock -filename ${FILENAME}
 
@@ -25,12 +22,15 @@ calc-finelock:
 calc-nosharing:
 	java -Xmx1536m -jar ${jar.path} -mode nosharing -filename ${FILENAME}
 
+calc-nolock:
+	java -Xmx1536m -jar ${jar.path} -mode nolock -filename ${FILENAME}
+
 calc-all:
 	java -Xmx1536m -jar ${jar.path} -mode sequential -filename ${FILENAME}
-	java -Xmx1536m -jar ${jar.path} -mode nolock -filename ${FILENAME}
 	java -Xmx1536m -jar ${jar.path} -mode coarselock -filename ${FILENAME}
 	java -Xmx1536m -jar ${jar.path} -mode finelock -filename ${FILENAME}
 	java -Xmx1536m -jar ${jar.path} -mode nosharing -filename ${FILENAME}
+	java -Xmx1536m -jar ${jar.path} -mode nolock -filename ${FILENAME}
 
 calc:
 	java -Xmx1536m -jar ${jar.path} -mode ${MODE} -filename ${FILENAME}

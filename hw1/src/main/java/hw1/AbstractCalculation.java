@@ -13,6 +13,8 @@ public abstract class AbstractCalculation {
 	
 	public abstract void calculateAverages();
 	
+	public abstract long getRuntime();
+	
 	public abstract void printSummary();
 	
 }
