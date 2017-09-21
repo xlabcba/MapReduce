@@ -10,23 +10,23 @@ public class TemperatureAnalysis {
 	public static void main(String[] args) throws CloneNotSupportedException {
 
 		// Parse Arguments
-		String mode = "";
+		String inputPath = "";
 		try {
-			mode = args[1];
+			inputPath = args[1];
 		} catch (Exception e) {
-			System.err.println("Please run with format: java -jar $$JAR_PATH -mode $$MODE -filename $$FILENAME");
+			System.err.println("Please run with format: java -jar ${JAR_PATH} -input ${INPUT_PATH} -mode ${MODE}");
 			System.exit(1);
 		}
-		String filename = "";
+		String mode = "";
 		try {
-			filename = args[3];
+			mode = args[3];
 		} catch (Exception e) {
-			System.err.println("Please run with format: java -jar $$JAR_PATH -mode $$MODE -filename $$FILENAME");
+			System.err.println("Please run with format: java -jar ${JAR_PATH} -input ${INPUT_PATH} -mode ${MODE}");
 			System.exit(1);
 		}
 
 		// Read lines from input file
-		List<String> lines = FileProcessor.readFile(filename);
+		List<String> lines = FileLoader.loadFile(inputPath);
 
 		// Run Calculation in Corresponding Mode
 		if (mode.equalsIgnoreCase("sequential")) {

@@ -1,36 +1,30 @@
-# Makefile for MapReduce Page Rank project.
+# Makefile for Multi-Version of Weather Data Analysis
 
 # Customize these paths for your environment.
 # -----------------------------------------------------------
 jar.name=hw1-0.0.1-SNAPSHOT.jar
 jar.path=target/${jar.name}
+input.name=1912.csv.gz
+input.path=input/${input.name}
 # -----------------------------------------------------------
 
 # Compiles code and builds jar (with dependencies).
 jar:
-	mvn clean install
+	mvn clean package
 
-calc-sequential:
-	java -Xmx1536m -jar ${jar.path} -mode sequential -filename ${FILENAME}
+sequential:
+	java -Xmx1536m -jar ${jar.path} -input ${input.path} -mode sequential 
 
-calc-coarselock:
-	java -Xmx1536m -jar ${jar.path} -mode coarselock -filename ${FILENAME}
+nolock:
+	java -Xmx1536m -jar ${jar.path} -input ${input.path} -mode nolock 
 
-calc-finelock:
-	java -Xmx1536m -jar ${jar.path} -mode finelock -filename ${FILENAME}
+coarselock:
+	java -Xmx1536m -jar ${jar.path} -input ${input.path} -mode coarselock 
 
-calc-nosharing:
-	java -Xmx1536m -jar ${jar.path} -mode nosharing -filename ${FILENAME}
+finelock:
+	java -Xmx1536m -jar ${jar.path} -input ${input.path} -mode finelock 
 
-calc-nolock:
-	java -Xmx1536m -jar ${jar.path} -mode nolock -filename ${FILENAME}
+nosharing:
+	java -Xmx1536m -jar ${jar.path} -input ${input.path} -mode nosharing 
 
-calc-all:
-	java -Xmx1536m -jar ${jar.path} -mode sequential -filename ${FILENAME}
-	java -Xmx1536m -jar ${jar.path} -mode coarselock -filename ${FILENAME}
-	java -Xmx1536m -jar ${jar.path} -mode finelock -filename ${FILENAME}
-	java -Xmx1536m -jar ${jar.path} -mode nosharing -filename ${FILENAME}
-	java -Xmx1536m -jar ${jar.path} -mode nolock -filename ${FILENAME}
-
-calc:
-	java -Xmx1536m -jar ${jar.path} -mode ${MODE} -filename ${FILENAME}
+all: sequential nolock coarselock finelock nosharing

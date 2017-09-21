@@ -1,45 +1,45 @@
 package hw1;
 
-public class StationRecord implements Cloneable {
+public class StationRecord {
 
 	private String stationId;
 	private double sum;
 	private int count;
-	private boolean isFibonacciOn = true;
 
-	public StationRecord(String stationId, double temp, int count) {
-		// [TODO] Will this count for adding to running sum by Fibonacci???
+	public StationRecord(String stationId) {
 		this.stationId = stationId;
-		this.sum = temp;
-		this.count = count;
+		this.sum = 0;
+		this.count = 0;
 	}
 
-	public Object clone() throws CloneNotSupportedException {
-		return (StationRecord) super.clone();
-	}
-
-	public void addRecord(double temp, int count) {
-		if (isFibonacciOn) {
+	public void addRecord(double temp) {
+		if (Constants.IS_FIBO_ON) {
 			Utils.fibonacci(17);
 		}
 		this.sum += temp;
-		this.count += count;
+		this.count += 1;
 	}
 
-	public synchronized void addRecordSafe(double temp, int count) {
-		if (isFibonacciOn) {
+	public synchronized void addRecordSafe(double temp) {
+		if (Constants.IS_FIBO_ON) {
 			Utils.fibonacci(17);
 		}
 		this.sum += temp;
-		this.count += count;
+		this.count += 1;
 	}
 	
-	public void addRecord(StationRecord otherRecord) {
+	public void mergeRecords(StationRecord otherRecord) {
+		if (!this.stationId.equals(otherRecord.stationId)) {
+			throw new IllegalArgumentException("Two records from different station cannot be merged!");
+		}
 		this.sum += otherRecord.getSum();
 		this.count += otherRecord.getCount();
 	}
 
 	public double calcAverage() {
+		if (this.count == 0) {
+			throw new IllegalArgumentException("No data in this station!");
+		}
 		return this.sum / this.count;
 	}
 
@@ -65,14 +65,6 @@ public class StationRecord implements Cloneable {
 
 	public void setCount(int count) {
 		this.count = count;
-	}
-
-	public boolean isFibonacciOn() {
-		return isFibonacciOn;
-	}
-
-	public void setFibonacciOn(boolean isFibonacciOn) {
-		this.isFibonacciOn = isFibonacciOn;
 	}
 
 	@Override

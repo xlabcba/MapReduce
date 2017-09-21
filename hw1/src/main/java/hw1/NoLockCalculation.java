@@ -63,11 +63,10 @@ public class NoLockCalculation extends AbstractCalculation {
 				String stationId = entry[0];
 				Double temperature = Double.parseDouble(entry[3]);
 				// Update record
-				if (!stations.containsKey(entry[0])) {
-					stations.put(entry[0], new StationRecord(stationId, temperature, 1));
-				} else {
-					stations.get(entry[0]).addRecord(temperature, 1);
+				if (!stations.containsKey(stationId)) {
+					stations.put(stationId, new StationRecord(stationId));
 				}
+				stations.get(stationId).addRecord(temperature);
 			}
 		}
 	}

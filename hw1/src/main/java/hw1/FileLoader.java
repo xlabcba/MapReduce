@@ -14,14 +14,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-public class FileProcessor {
-
-	private static final String INPUT_FILE_PATH = "/input/";
+public class FileLoader {
 
 	/**
 	 * Read .csv.gz line by line
 	 */
-	public static List<String> readFile(String gzFileName) {
+	public static List<String> loadFile(String gzFilePath) {
 
 		List<String> lines = new ArrayList<String>();
 		BufferedReader br = null;
@@ -30,10 +28,8 @@ public class FileProcessor {
 		try {
 
 			// System.out.println("[Debug] Start Reading...");			
-			String root = new File("").getAbsolutePath();
-			// System.out.println("Path:" + root);
 
-			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(root + INPUT_FILE_PATH + gzFileName));
+			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(gzFilePath));
 
 			br = new BufferedReader(new InputStreamReader(gzis));
 			while ((line = br.readLine()) != null) {
@@ -61,17 +57,13 @@ public class FileProcessor {
 	/**
 	 * Unzip .csv.gz & save as .csv file & read line by line
 	 */
-	public static List<String> saveAndReadFile(String gzFileName) {
+	public static List<String> loadAndSaveFile(String gzFilePath) {
 
 		List<String> lines = new ArrayList<String>();
 		String line = "";
-		String fileNameSplitor = "\\.";
-		String fileNameJoiner = ".";
 
-		String root = new File("").getAbsolutePath();
-		String[] gzFileNameLst = gzFileName.split(fileNameSplitor);
-		String csvFileName = String.join(fileNameJoiner,
-				Arrays.copyOfRange(gzFileNameLst, 0, gzFileNameLst.length - 1));
+		String[] gzFilePathLst = gzFilePath.split(Constants.FILENAME_SPLITOR);
+		String csvFilePath = String.join(Constants.FILENAME_JOINER, Arrays.copyOfRange(gzFilePathLst, 0, gzFilePathLst.length - 1));
 
 		byte[] buffer = new byte[1024];
 
@@ -79,8 +71,8 @@ public class FileProcessor {
 
 			// System.out.println("[Debug] Start Unzip...");		
 
-			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(root + INPUT_FILE_PATH + gzFileName));
-			FileOutputStream out = new FileOutputStream(root + INPUT_FILE_PATH + csvFileName);
+			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(gzFilePath));
+			FileOutputStream out = new FileOutputStream(csvFilePath);
 
 			int len;
 			while ((len = gzis.read(buffer)) > 0) {
@@ -100,7 +92,7 @@ public class FileProcessor {
 
 			// System.out.println("[Debug] Start Reading csv...");
 
-			BufferedReader br = new BufferedReader(new FileReader(root + INPUT_FILE_PATH + csvFileName));
+			BufferedReader br = new BufferedReader(new FileReader(csvFilePath));
 			while ((line = br.readLine()) != null) {
 				lines.add(line);
 			}

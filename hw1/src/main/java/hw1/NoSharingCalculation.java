@@ -45,18 +45,11 @@ public class NoSharingCalculation extends AbstractCalculation {
 			// System.out.println("[Debug] Thread" + threadIndex++);
 			for (StationRecord currStation : currThreadStations.values()) {
 				// System.out.println("[Debug] " + currStation);
-				if (!stations.containsKey(currStation.getStationId())) {
-					// [TODO] Clone??? check cost compared with initialize new instance
-					StationRecord newRecord;
-					try {
-						newRecord = (StationRecord) currStation.clone();
-						stations.put(currStation.getStationId(), newRecord);
-					} catch (CloneNotSupportedException e) {
-						e.printStackTrace();
-					}
-				} else {
-					stations.get(currStation.getStationId()).addRecord(currStation);
+				String stationId = currStation.getStationId();
+				if (!stations.containsKey(stationId)) {
+					stations.put(stationId, new StationRecord(stationId));
 				}
+				stations.get(stationId).mergeRecords(currStation);
 			}
 		}
 		
@@ -92,11 +85,10 @@ public class NoSharingCalculation extends AbstractCalculation {
 				// Update record
 				String stationId = entry[0];
 				Double temperature = Double.parseDouble(entry[3]);
-				if (!stations.containsKey(entry[0])) {
-					stations.put(entry[0], new StationRecord(stationId, temperature, 1));
-				} else {
-					stations.get(entry[0]).addRecord(temperature, 1);
+				if (!stations.containsKey(stationId)) {
+					stations.put(stationId, new StationRecord(stationId));
 				}
+				stations.get(stationId).addRecord(temperature);
 			}
 
 		}

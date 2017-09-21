@@ -67,12 +67,11 @@ public class FineLockCalculation extends AbstractCalculation {
 				// Update record
 				// [TODO] How to entry-level locking without locking stations?
 				synchronized (stations) {
-					if (!stations.containsKey(entry[0])) {
-						stations.put(entry[0], new StationRecord(stationId, temperature, 1));
-						continue;
+					if (!stations.containsKey(stationId)) {
+						stations.put(stationId, new StationRecord(stationId));
 					}
 				}
-				stations.get(entry[0]).addRecordSafe(temperature, 1);
+				stations.get(stationId).addRecordSafe(temperature);
 			}
 		}
 	}
