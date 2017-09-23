@@ -12,33 +12,40 @@ public class StationRecord {
 		this.count = 0;
 	}
 
-	public void addRecord(double temp) {
+	/**
+	 * Add one record for current station
+	 * @param temperature
+	 */
+	public void addRecord(double temperature) {
 		if (Constants.IS_FIBO_ON) {
 			Utils.fibonacci(17);
 		}
-		this.sum += temp;
-		this.count += 1;
-	}
-
-	public synchronized void addRecordSafe(double temp) {
-		if (Constants.IS_FIBO_ON) {
-			Utils.fibonacci(17);
-		}
-		this.sum += temp;
+		this.sum += temperature;
 		this.count += 1;
 	}
 	
+	/**
+	 * Merge a station record into current station record
+	 * Both may have accumulated multiple records
+	 * @param otherRecord
+	 */
 	public void mergeRecords(StationRecord otherRecord) {
 		if (!this.stationId.equals(otherRecord.stationId)) {
-			throw new IllegalArgumentException("Two records from different station cannot be merged!");
+			System.err.println("Two records from different station cannot be merged!");
+			return;
 		}
 		this.sum += otherRecord.getSum();
 		this.count += otherRecord.getCount();
 	}
 
+	/**
+	 * Calculate averge temperature of current station
+	 * @return
+	 */
 	public double calcAverage() {
 		if (this.count == 0) {
-			throw new IllegalArgumentException("No data in this station!");
+			System.err.println("No data in this station!");
+			System.exit(1);
 		}
 		return this.sum / this.count;
 	}

@@ -1,14 +1,11 @@
 package hw1;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +15,8 @@ public class FileLoader {
 
 	/**
 	 * Read .csv.gz line by line
+	 * @param gzFilePath
+	 * @return
 	 */
 	public static List<String> loadFile(String gzFilePath) {
 
@@ -25,6 +24,7 @@ public class FileLoader {
 		BufferedReader br = null;
 		String line = "";
 
+		// Load .csv.gz file into string arraylist
 		try {
 
 			// System.out.println("[Debug] Start Reading...");			
@@ -37,6 +37,7 @@ public class FileLoader {
 			}
 
 			gzis.close();
+			
 			// System.out.println("[Debug] Done Reading!");
 
 		} catch (IOException e) {
@@ -55,18 +56,23 @@ public class FileLoader {
 	}
 
 	/**
+	 * A worked experiment
 	 * Unzip .csv.gz & save as .csv file & read line by line
+	 * @param gzFilePath
+	 * @return
 	 */
 	public static List<String> loadAndSaveFile(String gzFilePath) {
 
 		List<String> lines = new ArrayList<String>();
 		String line = "";
+		byte[] buffer = new byte[1024];
+		BufferedReader br = null;
 
+		// Generate csv file output path
 		String[] gzFilePathLst = gzFilePath.split(Constants.FILENAME_SPLITOR);
 		String csvFilePath = String.join(Constants.FILENAME_JOINER, Arrays.copyOfRange(gzFilePathLst, 0, gzFilePathLst.length - 1));
 
-		byte[] buffer = new byte[1024];
-
+		// Unzip.csv.gz file and save as .csv file in the same folder
 		try {
 
 			// System.out.println("[Debug] Start Unzip...");		
@@ -88,11 +94,12 @@ public class FileLoader {
 			e.printStackTrace();
 		}
 
+		// Read .csv file and load as string arraylist
 		try {
 
 			// System.out.println("[Debug] Start Reading csv...");
 
-			BufferedReader br = new BufferedReader(new FileReader(csvFilePath));
+			br = new BufferedReader(new FileReader(csvFilePath));
 			while ((line = br.readLine()) != null) {
 				lines.add(line);
 			}

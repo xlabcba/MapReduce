@@ -6,11 +6,20 @@ import java.util.Map;
 
 public class SequentialCalculation extends AbstractCalculation {
 	
-	private Map<String, StationRecord> stations = new HashMap<String, StationRecord>();
-	private Map<String, Double> averages = new HashMap<String, Double>();
-	private long runtime = 0;
+	private Map<String, StationRecord> stations;
+	private Map<String, Double> averages;
+	private long runtime;
 
+	public SequentialCalculation() {
+		this.stations = new HashMap<String, StationRecord>();
+		this.averages = new HashMap<String, Double>();
+		this.runtime = 0;	
+	}
+
+	@Override
 	public void calculate(List<String> lines) {
+		
+		System.out.println("[Debug] Calculating in sequential...");
 		
 		long startTime = System.currentTimeMillis();
 		
@@ -18,10 +27,10 @@ public class SequentialCalculation extends AbstractCalculation {
 			// Validate record
 			if (!Utils.isValidRecord(line)) continue;
 			// Parse line
-			String[] entry = line.split(Constants.CSV_SEPARATOR);		
-			// Update record
+			String[] entry = line.split(Constants.CSV_SEPARATOR);	
 			String stationId = entry[0];
 			Double temperature = Double.parseDouble(entry[3]);
+			// Update record
 			if (!stations.containsKey(stationId)) {
 				stations.put(stationId, new StationRecord(stationId));
 			}
@@ -32,23 +41,33 @@ public class SequentialCalculation extends AbstractCalculation {
 		
 		runtime = System.currentTimeMillis() - startTime;
 		
-		if (Constants.PRINT_SUMMARY) {
-			printSummary();
+		if (Constants.PRINT_AVERAGES) {
+			printAverages();
 		}
 	}
 	
+	@Override
 	public void calculateAverages() {
 		for (StationRecord station : this.stations.values()) {
-			this.averages.put(station.getStationId(), station.calcAverage());
+			if (station.getCount() != 0) {
+				this.averages.put(station.getStationId(), station.calcAverage());
+			}
 		}
 	}
 	
+	@Override
+	public Map<String, Double> getAverages() {
+		return this.averages;
+	}
+	
+	@Override
 	public long getRuntime() {
 		return this.runtime;
 	}
 
-	public void printSummary() {
-		System.out.println("[Debug] ******************** SUMMARY ******************");
+	@Override
+	public void printAverages() {
+		System.out.println("[Debug] ******************** Averages ******************");
 		for (StationRecord station : this.stations.values()) {
 			System.out.println("[Debug] " + "[stationId=" + station.getStationId() + ", average="
 					+ averages.get(station.getStationId()) + "]");
