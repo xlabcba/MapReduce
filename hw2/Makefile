@@ -6,7 +6,7 @@ hadoop.root=/usr/local/hadoop-2.7.4
 jar.name=hw2-0.0.1-SNAPSHOT.jar
 jar.path=target/${jar.name}
 job.name=temperatureAnalysis.temperatureAnalysisDriver
-local.mode=inmappercomb
+local.mode=secondarysort
 local.input=input
 local.output=output
 # Pseudo-Cluster Execution

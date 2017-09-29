@@ -13,6 +13,13 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import noCombiner.MapperWithNoCombiner;
 import noCombiner.ReducerWithNoCombiner;
 import noCombiner.StationRecordWritableWithNoCombiner;
+import secondarySort.FirstPartitioner;
+import secondarySort.GroupComparatorWithSecondarySort;
+import secondarySort.KeyComparatorWithSecondarySort;
+import secondarySort.KeyWritableWithSecondarySort;
+import secondarySort.MapperWithSecondarySort;
+import secondarySort.ReducerWithSecondarySort;
+import secondarySort.StationRecordWritableWithSecondarySort;
 import combiner.MapperWithCombiner;
 import combiner.ReducerWithCombiner;
 import combiner.Combiner;
@@ -38,22 +45,33 @@ public class TemperatureAnalysisDriver {
 	    
 	    if (otherArgs[1].equalsIgnoreCase("nocombiner")) {
 	    	job.setMapperClass(MapperWithNoCombiner.class);
-		    job.setReducerClass(ReducerWithNoCombiner.class);
+		    job.setMapOutputKeyClass(Text.class);
 		    job.setMapOutputValueClass(StationRecordWritableWithNoCombiner.class);
+		    job.setReducerClass(ReducerWithNoCombiner.class);
 	    } else if (otherArgs[1].equalsIgnoreCase("combiner")){
 	    	job.setMapperClass(MapperWithCombiner.class);
-		    job.setReducerClass(ReducerWithCombiner.class);
-		    job.setCombinerClass(Combiner.class);
+		    job.setMapOutputKeyClass(Text.class);
 		    job.setMapOutputValueClass(StationRecordWritableWithCombiner.class);
+		    job.setCombinerClass(Combiner.class);
+		    job.setReducerClass(ReducerWithCombiner.class);
 	    } else if (otherArgs[1].equalsIgnoreCase("inmappercomb")) {
 	    	job.setMapperClass(MapperWithInMapperComb.class);
-		    job.setReducerClass(ReducerWithInMapperComb.class);
+		    job.setMapOutputKeyClass(Text.class);
 		    job.setMapOutputValueClass(StationRecordWritableWithInMapperComb.class);
+		    job.setReducerClass(ReducerWithInMapperComb.class);
+	    } else if (otherArgs[1].equalsIgnoreCase("secondarysort")) {
+	    	job.setMapperClass(MapperWithSecondarySort.class);
+	    	job.setMapOutputKeyClass(KeyWritableWithSecondarySort.class);
+	    	job.setMapOutputValueClass(StationRecordWritableWithSecondarySort.class);
+	    	job.setPartitionerClass(FirstPartitioner.class);
+	    	job.setSortComparatorClass(KeyComparatorWithSecondarySort.class);
+	    	job.setGroupingComparatorClass(GroupComparatorWithSecondarySort.class);
+	    	job.setReducerClass(ReducerWithSecondarySort.class);
+	    	
 	    } else {
 		      System.err.println("Usage: ${mode} can only be (nocombiner/combiner/inmappercomb)");
 		      System.exit(1);
 	    }
-	    job.setMapOutputKeyClass(Text.class);
 	    job.setOutputKeyClass(Text.class);
 	    job.setOutputValueClass(Text.class);
 	    FileInputFormat.addInputPath(job, new Path(otherArgs[2]));
