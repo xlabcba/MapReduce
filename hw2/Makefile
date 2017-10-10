@@ -5,23 +5,28 @@
 hadoop.root=/usr/local/hadoop-2.7.4
 jar.name=hw2-0.0.1-SNAPSHOT.jar
 jar.path=target/${jar.name}
-job.name=temperatureAnalysis.temperatureAnalysisDriver
-local.mode=secondarysort
+job.name=temperatureAnalysis.TemperatureAnalysisDriver
+# the mode you want to run with locally, must be one of 
+# [nocombiner, combiner, inmappercomb, secondarysort]
+local.mode=nocombiner
 local.input=input
 local.output=output
 # Pseudo-Cluster Execution
 hdfs.user.name=lixie
-hdfs.input=wc/input
-hdfs.output=wc/output
+hdfs.input=input
+hdfs.output=output
 # AWS EMR Execution
 aws.emr.release=emr-5.5.0
 aws.region=us-east-1
 aws.bucket.name=lixiebucket
 aws.subnet.id=subnet-f1ca3cba
+# the mode you want to run with remotely, must be one of 
+# [nocombiner, combiner, inmappercomb, secondarysort]
+aws.mode= nocombiner
 aws.input=input
 aws.output=output
 aws.log.dir=log
-aws.num.nodes=2
+aws.num.nodes=5
 aws.instance.type=m4.large
 # -----------------------------------------------------------
 
@@ -111,11 +116,11 @@ upload-app-aws:
 # Main EMR launch.
 cloud: jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "WordCount Cluster" \
+		--name "Weather Data Cluster" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 	    --applications Name=Hadoop \
-	    --steps '[{"Args":["${job.name}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.output}"],"Type":"CUSTOM_JAR","Jar":"s3://${aws.bucket.name}/${jar.name}","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
+	    --steps '[{"Args":["${job.name}","${aws.mode}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.output}"],"Type":"CUSTOM_JAR","Jar":"s3://${aws.bucket.name}/${jar.name}","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
 		--log-uri s3://${aws.bucket.name}/${aws.log.dir} \
 		--service-role EMR_DefaultRole \
 		--ec2-attributes InstanceProfile=EMR_EC2_DefaultRole,SubnetId=${aws.subnet.id} \

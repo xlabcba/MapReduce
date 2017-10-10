@@ -4,7 +4,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
 public class StationRecordWritableWithInMapperComb implements Writable {
@@ -28,26 +27,48 @@ public class StationRecordWritableWithInMapperComb implements Writable {
 		this.minCount = minCount;
 	}
 	
+	/**
+	 * Add temperature sum and count to corresp. max values
+	 * @param temp
+	 * @param count
+	 */
 	public void addMaxRecord(double temp, int count) {
 		this.maxSum += temp;
 		this.maxCount += count;
 	}
 	
+	/**
+	 * Merge record max values with corresp. max values
+	 * @param other
+	 */
 	public void addMaxRecord(StationRecordWritableWithInMapperComb other) {
 		this.maxSum += other.maxSum;
 		this.maxCount += other.maxCount;
 	}
 	
+	/**
+	 * Add temperature sum and count to corresp. min values
+	 * @param temp
+	 * @param count
+	 */
 	public void addMinRecord(double temp, int count) {
 		this.minSum += temp;
 		this.minCount += count;
 	}
 	
+	/**
+	 * Merge record max values with corresp. min values
+	 * @param other
+	 */
 	public void addMinRecord(StationRecordWritableWithInMapperComb other) {
 		this.minSum += other.minSum;
 		this.minCount += other.minCount;
 	}
 	
+	/**
+	 * Merge record all values with corresp. all values
+	 * @param other
+	 */
 	public void addMaxAndMinRecord(StationRecordWritableWithInMapperComb other) {
 		this.maxSum += other.maxSum;
 		this.maxCount += other.maxCount;

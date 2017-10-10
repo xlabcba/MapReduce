@@ -25,12 +25,22 @@ public class StationRecordWritableWithSecondarySort implements Writable {
 		this.temp = temp;
 	}
 	
+	/**
+	 * Add record as TMAX record
+	 * @param year
+	 * @param temp
+	 */
 	public void setMaxTemp(int year, double temp) {
 		this.year = year;
 		this.type = new Text("TMAX");
 		this.temp = temp;
 	}
 	
+	/**
+	 * Add record as TMIN record
+	 * @param year
+	 * @param temp
+	 */
 	public void setMinTemp(int year, double temp) {
 		this.year = year;
 		this.type = new Text("TMIN");

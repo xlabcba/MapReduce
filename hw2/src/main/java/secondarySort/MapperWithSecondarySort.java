@@ -1,40 +1,42 @@
 package secondarySort;
 
 import java.io.IOException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Logger;
+// import java.util.logging.Logger;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Mapper.Context;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.DateTimeFormatterBuilder;
 
-public class MapperWithSecondarySort extends Mapper<LongWritable, Text, KeyWritableWithSecondarySort, StationRecordWritableWithSecondarySort> {
+/**
+ * @author lixie
+ * Mapper class for secondary sort
+ */
+public class MapperWithSecondarySort extends Mapper<LongWritable, Text, CompositeKeyWithSecondarySort, StationRecordWritableWithSecondarySort> {
 
+	// Constants
 	private static final String CSV_SPLITOR = ",";
 	private static final String NUM_REGEX = "((-|\\+)?[0-9]+(\\.[0-9]+)?)+";
 	private static final String TMAX = "TMAX";
 	private static final String TMIN = "TMIN";
-	private static final DateTimeFormatter DATE_FORMATTER = new DateTimeFormatterBuilder().appendYear(4,4).appendMonthOfYear(2).appendDayOfMonth(2).toFormatter();
 
-	private Logger logger = Logger.getLogger(MapperWithSecondarySort.class.getName());
+	// private Logger logger = Logger.getLogger(MapperWithSecondarySort.class.getName());
 
 	@Override
 	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 
+		// Parse line into entry and validate entry
 		String[] entry = value.toString().split(CSV_SPLITOR);
 		if (isValidRecord(entry)) {
+			// Parse entry into fields
 			Text stationId = new Text(entry[0]);
 			int year = parseYear(entry[1]);
 			Text type = new Text(entry[2]);
 			Double reading = Double.parseDouble(entry[3]);
-			KeyWritableWithSecondarySort stationYearPair = new KeyWritableWithSecondarySort(stationId, year);
+			// Create custom composite key with format (Text stationId, Int year)
+			CompositeKeyWithSecondarySort stationYearPair = new CompositeKeyWithSecondarySort(stationId, year);
+			// Create custom value with format (Int year, Text type, Double reading)
 			StationRecordWritableWithSecondarySort record = new StationRecordWritableWithSecondarySort(year, type, reading);
+			// emit (ck1, v1)
 			context.write(stationYearPair, record);
 		}
 	}

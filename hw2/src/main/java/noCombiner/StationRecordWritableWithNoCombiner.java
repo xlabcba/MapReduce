@@ -22,11 +22,19 @@ public class StationRecordWritableWithNoCombiner implements Writable {
 		this.temp = temp;
 	}
 	
+	/**
+	 * Set given temperature as a TMAX
+	 * @param temp
+	 */
 	public void setMaxTemp(double temp) {
 		this.type = new Text("TMAX");
 		this.temp = temp;
 	}
 	
+	/**
+	 * Set given temperature as a TMIN
+	 * @param temp
+	 */
 	public void setMinTemp(double temp) {
 		this.type = new Text("TMIN");
 		this.temp = temp;
