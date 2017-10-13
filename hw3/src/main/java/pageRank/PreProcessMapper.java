@@ -60,9 +60,13 @@ public class PreProcessMapper extends Mapper<LongWritable, Text, Text, Node> {
 			if (linkPageNames.size() != 0) {
 				node.adjacencyList = linkPageNames;
 			}
-
 			// Emit (pageName, node)
 			context.write(new Text(pageName), node);
+			// Emit (outlinkName, node) in case some page not appear as source
+			for (String outlinkName : linkPageNames) {
+				context.write(new Text(outlinkName), new Node());
+			}
+					
 
 		} catch (Exception e) {
 			e.printStackTrace();

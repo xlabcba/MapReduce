@@ -1,6 +1,5 @@
 package pageRank;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -8,16 +7,25 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 public class PageRankDriver {
 
-	public static Job doPreProcessJob(String inputPath, String outputPath, Configuration conf)
-			throws IOException, ClassNotFoundException, InterruptedException {
+	public static String iterationNo = "iterationNo";
+	public static String pageCount = "pageCount";
 
-		Job job = new Job(conf, "PageRank");
+	// Setup Hadoop global counters
+	public static enum globalCounters {
+		iterationNo, pageCount
+	}
+
+	public static Job doPreProcessJob(String input, String output, Configuration conf)
+			throws IOException, ClassNotFoundException, InterruptedException {
+    	
+		Job job = Job.getInstance(conf, "PreProcess");
 		job.setJarByClass(PageRankDriver.class);
 		job.setMapperClass(PreProcessMapper.class);
 		job.setReducerClass(PreProcessReducer.class);
@@ -25,10 +33,39 @@ public class PageRankDriver {
 		job.setMapOutputValueClass(Node.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Node.class);
-		// job.setOutputFormatClass(SequenceFileOutputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-		FileInputFormat.addInputPath(job, new Path(inputPath));
-		FileOutputFormat.setOutputPath(job, new Path(outputPath));
+		FileInputFormat.addInputPath(job, new Path(input));
+		FileOutputFormat.setOutputPath(job, new Path(output));
+
+		job.waitForCompletion(true);
+		return job;
+
+	}
+	
+	public static Job doPageRankJob(String input, String output, 
+			long pageCount, int iterationNo, Configuration conf)
+			throws IOException, ClassNotFoundException, InterruptedException {
+
+		// Setup global counters to job conf
+    	conf.setInt(globalCounters.iterationNo.toString(), iterationNo);
+    	conf.setLong(globalCounters.pageCount.toString(), pageCount);
+    	
+		Job job = Job.getInstance(conf, "PageRank_" + iterationNo);
+		job.setJarByClass(PageRankDriver.class);
+		job.setMapperClass(PageRankMapper.class);
+    	job.setPartitionerClass(PageRankPartitioner.class);
+    	job.setSortComparatorClass(PageRankKeyComparator.class);
+		job.setReducerClass(PageRankReducer.class);
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(Node.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Node.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+
+		FileInputFormat.addInputPath(job, new Path(input));
+		FileOutputFormat.setOutputPath(job, new Path(output));
 
 		job.waitForCompletion(true);
 		return job;
@@ -42,14 +79,24 @@ public class PageRankDriver {
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		if (otherArgs.length < 2) {
 			System.err.println("args : " + otherArgs.length);
-		    System.err.println("Usage: PageRank <in> <out>");
+			System.err.println("Usage: PageRank <in> <out>");
 			System.exit(1);
 		}
+		String input = otherArgs[0];
+		String output = otherArgs[1] + "_preprocess";
 
 		// Pre-process
-		Job preProcessJob = doPreProcessJob(otherArgs[0], otherArgs[1], conf);
+		Job preProcessJob = doPreProcessJob(input, output, conf);
+		
+        long pageCount = preProcessJob.getCounters().findCounter(globalCounters.pageCount).getValue();
 
-		// Page Rank
+        // Page Rank
+        Job pageRankJob;
+        for (int iterationNo = 0; iterationNo < 10; iterationNo++) {
+            input = output;
+            output = otherArgs[1] + "_pagerank_" + iterationNo;          
+            pageRankJob = doPageRankJob(input, output, pageCount, iterationNo, conf);
+        }
 
 		// Top-K
 
