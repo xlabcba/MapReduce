@@ -5,6 +5,8 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,12 +21,14 @@ import org.xml.sax.XMLReader;
 
 public class PreProcessMapper extends Mapper<LongWritable, Text, Text, Node> {
 
-	private static String DELIMITOR = ":";
 	private static Pattern namePattern;
 	static {
 		// Keep only html pages not containing tilde (~).
 		namePattern = Pattern.compile("^([^~]+)$");
 	}
+	
+	// Debugging Values
+	private Logger logger = Logger.getLogger(PreProcessMapper.class.getName());
 
 	@Override
 	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
@@ -54,8 +58,14 @@ public class PreProcessMapper extends Mapper<LongWritable, Text, Text, Node> {
 			xmlReader.setContentHandler(new WikiParser(linkPageNames));
 
 			// Parse html to list of linkPageNames
-			xmlReader.parse(new InputSource(new StringReader(html)));
+			html = html.replace("&", "&amp;"); // Replace &, or else SAXParser exception
+    		xmlReader.parse(new InputSource(new StringReader(html)));
 
+            // Remove self link, which is not allowed
+            while (linkPageNames.contains(pageName)) {
+            	linkPageNames.remove(pageName);
+            }
+            
 			Node node = new Node();
 			if (linkPageNames.size() != 0) {
 				node.adjacencyList = linkPageNames;
@@ -65,11 +75,11 @@ public class PreProcessMapper extends Mapper<LongWritable, Text, Text, Node> {
 			// Emit (outlinkName, node) in case some page not appear as source
 			for (String outlinkName : linkPageNames) {
 				context.write(new Text(outlinkName), new Node());
-			}
-					
+			}	
 
 		} catch (Exception e) {
 			e.printStackTrace();
+			logger.log(Level.INFO, html);
 			return;
 		}
 	}

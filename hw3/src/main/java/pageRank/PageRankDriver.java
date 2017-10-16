@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -71,6 +73,25 @@ public class PageRankDriver {
 		return job;
 
 	}
+	
+    public static Job doTopKJob(String input, String output, Configuration conf) 
+    		throws IOException, ClassNotFoundException, InterruptedException {
+
+		Job job = Job.getInstance(conf, "TopK");
+		job.setJarByClass(PageRankDriver.class);
+		job.setMapperClass(TopKMapper.class);
+		job.setReducerClass(TopKReducer.class);
+		job.setMapOutputKeyClass(NullWritable.class);
+		job.setMapOutputValueClass(Text.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(DoubleWritable.class);
+		job.setInputFormatClass(SequenceFileInputFormat.class);
+        FileInputFormat.addInputPath(job, new Path(input));
+        FileOutputFormat.setOutputPath(job, new Path(output));
+        
+		job.waitForCompletion(true);
+		return job;
+    }
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 
@@ -82,24 +103,27 @@ public class PageRankDriver {
 			System.err.println("Usage: PageRank <in> <out>");
 			System.exit(1);
 		}
-		String input = otherArgs[0];
-		String output = otherArgs[1] + "_preprocess";
 
 		// Pre-process
+		String input = otherArgs[0];
+		String output = otherArgs[1] + "_preprocess";
 		Job preProcessJob = doPreProcessJob(input, output, conf);
-		
+	
         long pageCount = preProcessJob.getCounters().findCounter(globalCounters.pageCount).getValue();
 
         // Page Rank
-        Job pageRankJob;
+        ;
         for (int iterationNo = 0; iterationNo < 10; iterationNo++) {
             input = output;
             output = otherArgs[1] + "_pagerank_" + iterationNo;          
-            pageRankJob = doPageRankJob(input, output, pageCount, iterationNo, conf);
+            Job pageRankJob = doPageRankJob(input, output, pageCount, iterationNo, conf);
         }
 
 		// Top-K
-
+        input = output;
+        output = otherArgs[1] + "_topk";     
+        Job topKJob = doTopKJob(input, output, conf);
+        
 	}
 
 }

@@ -60,6 +60,7 @@ public class Node implements Writable {
 		out.writeBoolean(isNode);
 	}
 
+	@Override
 	public void readFields(DataInput in) throws IOException {
 		pageRank = in.readDouble();
 		int size = in.readInt();
