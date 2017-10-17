@@ -3,8 +3,10 @@ package preProcess;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -30,15 +32,12 @@ public class PreProcessMapper extends Mapper<LongWritable, Text, Text, Node> {
 	}
 	
 	// Debugging Values
-	private Logger logger = Logger.getLogger(PreProcessMapper.class.getName());
+	// private Logger logger = Logger.getLogger(PreProcessMapper.class.getName());
 
 	@Override
 	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 
 		// Parse line to pageName:htmlContent and filter files
-		// String[] entry = value.toString().split(DELIMITOR, 2);
-		// String pageName = entry[0];
-		// String html = entry[1];
 		String lineStr = value.toString();
 		int delimLoc = lineStr.indexOf(':');
 		String pageName = lineStr.substring(0, delimLoc);
@@ -64,9 +63,12 @@ public class PreProcessMapper extends Mapper<LongWritable, Text, Text, Node> {
     		xmlReader.parse(new InputSource(new StringReader(html)));
 
             // Remove self link, which is not allowed
-            while (linkPageNames.contains(pageName)) {
-            	linkPageNames.remove(pageName);
-            }
+    		for (Iterator<String> li = linkPageNames.iterator(); li.hasNext();) {
+    			String currName = li.next();
+    			if (currName.equals(pageName)) {
+    				li.remove();
+    			}
+    		}
             
 			Node node = new Node();
 			if (linkPageNames.size() != 0) {
@@ -80,8 +82,8 @@ public class PreProcessMapper extends Mapper<LongWritable, Text, Text, Node> {
 			}	
 
 		} catch (Exception e) {
-			e.printStackTrace();
-			logger.log(Level.INFO, html);
+			// e.printStackTrace();
+			// logger.log(Level.INFO, html);
 			return;
 		}
 	}

@@ -2,6 +2,7 @@ package pageRank;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,7 +16,7 @@ public class PageRankMapper extends Mapper<Text, Node, Text, Node> {
 	private int iterationNo;
 	
 	// Debugging Values
-	private Logger logger;
+	// private Logger logger;
 	
 	@Override
     public void setup(Context context) throws IOException, InterruptedException {
@@ -26,8 +27,8 @@ public class PageRankMapper extends Mapper<Text, Node, Text, Node> {
         	 throw new Error("Mapper failed to pass global counters!");
         }
         // Initialize debugging values
-        this.logger = Logger.getLogger(PageRankMapper.class.getName());
-        this.logger.log(Level.INFO, "Mapper Iteration No." + iterationNo + "; pageCount: " + pageCount + ";");
+        // this.logger = Logger.getLogger(PageRankMapper.class.getName());
+        // this.logger.log(Level.INFO, "Mapper Iteration No." + iterationNo + "; pageCount: " + pageCount + ";");
     }
 
 	@Override
@@ -48,12 +49,12 @@ public class PageRankMapper extends Mapper<Text, Node, Text, Node> {
 			double contribution = value.pageRank / value.adjacencyList.size();
 			// Sent contribution along outlinks
 			for (String outlinkName : value.adjacencyList) {
-				Node contributionNode = new Node(contribution, new ArrayList<String>(), false);
+				Node contributionNode = new Node(contribution, new LinkedList<String>(), false);
 				context.write(new Text(outlinkName), contributionNode);
 			}	
 		} else {
 			// Increment page rank to total dangling mass accumulator
-			Node dummyNode = new Node(value.pageRank, new ArrayList<String>(), false);
+			Node dummyNode = new Node(value.pageRank, new LinkedList<String>(), false);
 			for (int i = 0; i < context.getNumReduceTasks(); i++) {
 				context.write(new Text("~" + i), dummyNode);	
 			}

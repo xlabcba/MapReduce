@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.hadoop.io.Writable;
@@ -16,7 +17,7 @@ public class Node implements Writable {
 
 	public Node() {
 		this.pageRank = new Double(0);
-		this.adjacencyList = new ArrayList<String>();
+		this.adjacencyList = new LinkedList<String>();
 		this.isNode = true;
 	}
 

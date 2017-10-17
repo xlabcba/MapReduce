@@ -17,9 +17,9 @@ public class PageRankReducer extends Reducer<Text, Node, Text, Node> {
 	private double deltaSum;
 	
 	// Debugging values
-	private double pageRankSum;
-	private int iterationNo;
-	private Logger logger;
+	// private double pageRankSum;
+	// private int iterationNo;
+	// private Logger logger;
 	
 	@Override
     public void setup(Context context) throws IOException, InterruptedException {
@@ -29,11 +29,12 @@ public class PageRankReducer extends Reducer<Text, Node, Text, Node> {
         	 throw new Error("Reducer failed to pass global counters!");
         }
         this.deltaSum = new Double(0);
-        // Debugging values initialization
-        this.iterationNo = context.getConfiguration().getInt(PageRankDriver.iterationNo, -100);
-        this.pageRankSum = new Double(0);
-		this.logger = Logger.getLogger(PageRankReducer.class.getName());
-		this.logger.log(Level.INFO, "Setup in Iteration No." + this.iterationNo + "; pageCount = " + this.pageCount + ";");
+        
+        // Debugging values
+        // this.iterationNo = context.getConfiguration().getInt(PageRankDriver.iterationNo, -100);
+        // this.pageRankSum = new Double(0);
+		// this.logger = Logger.getLogger(PageRankReducer.class.getName());
+		// this.logger.log(Level.INFO, "Setup in Iteration No." + this.iterationNo + "; pageCount = " + this.pageCount + ";");
     }
 
 	@Override
@@ -45,7 +46,9 @@ public class PageRankReducer extends Reducer<Text, Node, Text, Node> {
             	newDeltaSum += node.pageRank;
             }
             this.deltaSum = newDeltaSum;
-            this.logger.log(Level.INFO, "deltaSum: " + this.deltaSum);
+            
+    		// Debugging log
+            // this.logger.log(Level.INFO, "deltaSum: " + this.deltaSum);
         } else {	
     		// Initialize total inlinks contribution and node
     		double inlinkContribution = new Double(0);
@@ -69,15 +72,15 @@ public class PageRankReducer extends Reducer<Text, Node, Text, Node> {
     		resNode.pageRank = (ALPHA / this.pageCount) + ((1.0 - ALPHA) * inlinkContribution);
     		context.write(key, resNode);
     		
-    		pageRankSum += resNode.pageRank;
+    		// Debugging values
+    		// pageRankSum += resNode.pageRank;
             // this.logger.log(Level.INFO, "new pageRank: " + resNode.pageRank);
         }
 	}
 	
-	@Override
-	public void cleanup(Context context) throws IOException, InterruptedException {
-		// Debugging log
-		this.logger.log(Level.INFO, "Iteration No." + this.iterationNo + ": PageRankSum = " + this.pageRankSum);
-		
-	}
+	// Debugging log
+	// @Override
+	// public void cleanup(Context context) throws IOException, InterruptedException {
+		// this.logger.log(Level.INFO, "Iteration No." + this.iterationNo + ": PageRankSum = " + this.pageRankSum);	
+	// }
 }
