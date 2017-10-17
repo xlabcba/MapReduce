@@ -1,4 +1,4 @@
-package pageRank;
+package preProcess;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -18,6 +18,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
+
+import pageRank.Node;
 
 public class PreProcessMapper extends Mapper<LongWritable, Text, Text, Node> {
 

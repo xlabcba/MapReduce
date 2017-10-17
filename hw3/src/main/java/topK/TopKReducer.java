@@ -1,4 +1,4 @@
-package pageRank;
+package topK;
 
 import java.io.IOException;
 import java.util.TreeMap;
@@ -12,18 +12,19 @@ public class TopKReducer extends Reducer<NullWritable, Text, Text, DoubleWritabl
 	
 	// Constants
 	private static final String SPLITOR = ",";
-
-	private TreeMap<TreeMapNode, String> topKMap = new TreeMap<TreeMapNode, String>(new TreeMapNodeComparator());
+	private static final int K = 100;
 
 	@Override
 	public void reduce(NullWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+		
+		TreeMap<TreeMapNode, String> topKMap = new TreeMap<TreeMapNode, String>(new TreeMapNodeComparator());
 		
 		for (Text value : values) {
 			String[] entry = value.toString().split(SPLITOR);
 			TreeMapNode node = new TreeMapNode(entry[0], Double.valueOf(entry[1]));
 			topKMap.put(node, value.toString());
 			
-			if (topKMap.size() > 100) {
+			if (topKMap.size() > K) {
 				topKMap.remove(topKMap.firstKey());
 			}
 		}

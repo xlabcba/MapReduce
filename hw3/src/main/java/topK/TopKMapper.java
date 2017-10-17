@@ -1,4 +1,4 @@
-package pageRank;
+package topK;
 
 import java.io.IOException;
 import java.util.TreeMap;
@@ -7,7 +7,12 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
+import pageRank.Node;
+
 public class TopKMapper extends Mapper<Text, Node, NullWritable, Text> {
+	
+	// Constants
+	private static final int K = 100;
 	
 	private TreeMap<TreeMapNode, String> topKMap;
 	
@@ -23,7 +28,7 @@ public class TopKMapper extends Mapper<Text, Node, NullWritable, Text> {
 		String outStr = key.toString() + "," + value.pageRank;
 		topKMap.put(node, outStr);
 
-		if (topKMap.size() > 100) {
+		if (topKMap.size() > K) {
 			topKMap.remove(topKMap.firstKey());
 		}
 	}

@@ -14,6 +14,11 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
+import preProcess.PreProcessMapper;
+import preProcess.PreProcessReducer;
+import topK.TopKMapper;
+import topK.TopKReducer;
+
 public class PageRankDriver {
 
 	public static String iterationNo = "iterationNo";
@@ -106,7 +111,7 @@ public class PageRankDriver {
 
 		// Pre-process
 		String input = otherArgs[0];
-		String output = otherArgs[1] + "_preprocess";
+		String output = otherArgs[1] + "/preprocess";
 		Job preProcessJob = doPreProcessJob(input, output, conf);
 	
         long pageCount = preProcessJob.getCounters().findCounter(globalCounters.pageCount).getValue();
@@ -115,13 +120,13 @@ public class PageRankDriver {
         ;
         for (int iterationNo = 0; iterationNo < 10; iterationNo++) {
             input = output;
-            output = otherArgs[1] + "_pagerank_" + iterationNo;          
+            output = otherArgs[1] + "/pagerank_" + iterationNo;          
             Job pageRankJob = doPageRankJob(input, output, pageCount, iterationNo, conf);
         }
 
 		// Top-K
         input = output;
-        output = otherArgs[1] + "_topk";     
+        output = otherArgs[1] + "/topk";     
         Job topKJob = doTopKJob(input, output, conf);
         
 	}

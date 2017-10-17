@@ -1,12 +1,15 @@
-package pageRank;
+package preProcess;
 
 import java.io.IOException;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
-public class PreProcessReducer extends Reducer<Text, Node, Text, Node> {
-	
+import pageRank.Node;
+import pageRank.PageRankDriver;
+import pageRank.PageRankDriver.globalCounters;
+
+public class PreProcessReducer extends Reducer<Text, Node, Text, Node> {	
 
 	@Override
 	public void reduce(Text key, Iterable<Node> values, Context context) throws IOException, InterruptedException {
