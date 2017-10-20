@@ -11,15 +11,17 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /** Parses a Wikipage, finding links inside bodyContent div element. */
 public class WikiParser extends DefaultHandler {
-	
+
 	/** List of linked pages; filled by parser. */
 	private List<String> linkPageNames;
 	/** Nesting depth inside bodyContent div element. */
 	private int count = 0;
-	
+
 	private static Pattern linkPattern;
+
 	static {
-		// Keep only html filenames ending relative paths and not containing tilde (~).
+		// Keep only html filenames ending relative paths and not containing
+		// tilde (~).
 		linkPattern = Pattern.compile("^\\..*/([^~]+)\\.html$");
 	}
 

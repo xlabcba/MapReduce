@@ -8,6 +8,10 @@ jar.path=target/${jar.name}
 job.name=pageRank.PageRankDriver
 local.input=input
 local.output=output
+# Number of top important page in output
+local.topK=100
+# If true, switch on printing out converge rate
+local.printConvergeRate=true
 # Pseudo-Cluster Execution
 hdfs.user.name=lixie
 hdfs.input=input
@@ -17,11 +21,12 @@ aws.emr.release=emr-5.5.0
 aws.region=us-east-1
 aws.bucket.name=lixiebucket
 aws.subnet.id=subnet-f1ca3cba
-# the mode you want to run with remotely, must be one of 
-# [nocombiner, combiner, inmappercomb, secondarysort]
-aws.mode= nocombiner
 aws.input=input
 aws.output=output
+# Number of top important page in output
+aws.topK=100
+# If true, switch on printing out converge rate
+aws.printConvergeRate=true
 aws.log.dir=log
 aws.num.nodes=5
 aws.instance.type=m4.large
@@ -39,7 +44,7 @@ clean-local-output:
 # Make sure Hadoop  is set up (in /etc/hadoop files) for standalone operation (not pseudo-cluster).
 # https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/SingleCluster.html#Standalone_Operation
 alone: jar clean-local-output
-	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${local.input} ${local.output}
+	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${local.input} ${local.output} ${local.topK} ${local.printConvergeRate}
 
 # Start HDFS
 start-hdfs:
@@ -113,11 +118,11 @@ upload-app-aws:
 # Main EMR launch.
 cloud: jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "Weather Data Cluster" \
+		--name "Wiki Page Rank Cluster" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 	    --applications Name=Hadoop \
-	    --steps '[{"Args":["${job.name}","${aws.mode}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.output}"],"Type":"CUSTOM_JAR","Jar":"s3://${aws.bucket.name}/${jar.name}","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
+	    --steps '[{"Args":["${job.name}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.output}","${aws.topK}","${aws.printConvergeRate}"],"Type":"CUSTOM_JAR","Jar":"s3://${aws.bucket.name}/${jar.name}","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
 		--log-uri s3://${aws.bucket.name}/${aws.log.dir} \
 		--service-role EMR_DefaultRole \
 		--ec2-attributes InstanceProfile=EMR_EC2_DefaultRole,SubnetId=${aws.subnet.id} \

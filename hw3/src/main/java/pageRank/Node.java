@@ -9,22 +9,30 @@ import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 
+/**
+ * @author lixie
+ * Node object containing page info
+ * and passed between mapper and reducer.
+ */
 public class Node implements Writable {
-
-	public double pageRank;
-	public List<String> adjacencyList;
-	public boolean isNode; // if true, is real node; or else contribution value
+	
+	private double pageRank;
+	private List<String> adjacencyList;
+	private boolean isNode; // if true, is real node; or else contribution value
+	private double convergeRate; // |newPageRank - oldPageRank| / oldPageRank
 
 	public Node() {
 		this.pageRank = new Double(0);
 		this.adjacencyList = new LinkedList<String>();
 		this.isNode = true;
+		this.convergeRate = new Double(1);
 	}
 
-	public Node(double pageRank, List<String> adjacencyList, boolean isNode) {
+	public Node(double pageRank, List<String> adjacencyList, boolean isNode, double convergeRate) {
 		this.pageRank = pageRank;
 		this.adjacencyList = adjacencyList;
 		this.isNode = isNode;
+		this.convergeRate = convergeRate;
 	}
 
 	public double getPageRank() {
@@ -51,6 +59,14 @@ public class Node implements Writable {
 		this.isNode = isNode;
 	}
 
+	public double getConvergeRate() {
+		return convergeRate;
+	}
+
+	public void setConvergeRate(double convergeRate) {
+		this.convergeRate = convergeRate;
+	}
+
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeDouble(pageRank);
@@ -59,6 +75,7 @@ public class Node implements Writable {
 			out.writeUTF(adjacencyList.get(i));
 		}
 		out.writeBoolean(isNode);
+		out.writeDouble(convergeRate);
 	}
 
 	@Override
@@ -70,11 +87,13 @@ public class Node implements Writable {
 			adjacencyList.add(in.readUTF());
 		}
 		isNode = in.readBoolean();
+		convergeRate = in.readDouble();
 	}
 
 	@Override
 	public String toString() {
-		return "Node [pageRank=" + pageRank + ", adjacencyList=" + adjacencyList + ", isNode=" + isNode + "]";
+		return "Node [pageRank=" + pageRank + ", adjacencyList=" + adjacencyList + ", isNode=" + isNode
+				+ ", convergeRate=" + convergeRate + "]";
 	}
-	
+
 }

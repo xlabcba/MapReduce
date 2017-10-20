@@ -1,19 +1,14 @@
 package topK;
 
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.ArrayList;
-
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-
+/**
+ * @author lixie
+ * Node object used in treemap.
+ */
 public class TreeMapNode {
-	
-	public String pageName;
-	public double pageRank;
-	
+
+	private String pageName;
+	private double pageRank;
+
 	public TreeMapNode() {
 		this.pageName = new String();
 		this.pageRank = new Double(0);
@@ -45,5 +40,5 @@ public class TreeMapNode {
 	public String toString() {
 		return "TreeMapNode [pageName=" + pageName + ", pageRank=" + pageRank + "]";
 	}
-	
+
 }
