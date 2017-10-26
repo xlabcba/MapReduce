@@ -16,6 +16,10 @@ local.printConvergeRate=true
 hdfs.user.name=lixie
 hdfs.input=input
 hdfs.output=output
+# Number of top important page in output
+hdfs.topK=100
+# If true, switch on printing out converge rate
+hdfs.printConvergeRate=true
 # AWS EMR Execution
 aws.emr.release=emr-5.5.0
 aws.region=us-east-1
@@ -28,7 +32,7 @@ aws.topK=100
 # If true, switch on printing out converge rate
 aws.printConvergeRate=true
 aws.log.dir=log
-aws.num.nodes=5
+aws.num.nodes=10
 aws.instance.type=m4.large
 # -----------------------------------------------------------
 
@@ -91,12 +95,12 @@ download-output:
 # Make sure Hadoop  is set up (in /etc/hadoop files) for pseudo-clustered operation (not standalone).
 # https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/SingleCluster.html#Pseudo-Distributed_Operation
 pseudo: jar stop-yarn format-hdfs init-hdfs upload-input-hdfs start-yarn clean-local-output 
-	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${hdfs.input} ${hdfs.output}
+	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${hdfs.input} ${hdfs.output} ${hdfs.topK} ${hdfs.printConvergeRate}
 	make download-output
 
 # Runs pseudo-clustered (quickie).
 pseudoq: jar clean-local-output clean-hdfs-output 
-	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${hdfs.input} ${hdfs.output}
+	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${hdfs.input} ${hdfs.output} ${hdfs.topK} ${hdfs.printConvergeRate}
 	make download-output
 
 # Create S3 bucket.
