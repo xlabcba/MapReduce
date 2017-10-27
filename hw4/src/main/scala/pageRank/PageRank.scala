@@ -41,10 +41,10 @@ object PageRank {
     .reduceByKey((adjList1, adjList2) => adjList1 ::: adjList2)
     .persist()
 		
-		// Save as text file
+    // Save as text file
     graph.saveAsTextFile("output")
     
-		//Stop the Spark context  
-		sc.stop
-	}
+    //Stop the Spark context  
+    sc.stop
+  }
 }
