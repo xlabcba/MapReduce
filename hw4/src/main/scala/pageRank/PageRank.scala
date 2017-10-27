@@ -17,7 +17,7 @@ object PageRank {
     val pageName = pageNode(0)
     val outlinks = if (pageNode.size > 1) pageNode(1).split("~").toList else List[String]()
     List((pageName, outlinks)) ::: emitAdjList(outlinks)
-	}
+  }
   
   def main(args: Array[String]) = {
 
