@@ -58,7 +58,7 @@ public class GraphGenerator {
 
 			// Return as String with format PageName~Outlink1~Outlink2...
 			String adjacencyList = String.join("~", linkPageNames);
-			return pageName + "~" + adjacencyList;
+			return pageName + "~~~" + adjacencyList;
 
 		} catch (Exception e) {
 			// e.printStackTrace();
