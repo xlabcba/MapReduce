@@ -37,7 +37,7 @@ object PageRank {
     
     // Pre-Process on initial graph
     val graph = lines
-    .mapPartitions(nodes => nodes.flatMap(emitPageNode))
+    .flatMap(emitPageNode)
     .reduceByKey((adjList1, adjList2) => adjList1 ::: adjList2)
     .persist()
 		
