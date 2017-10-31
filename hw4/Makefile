@@ -8,6 +8,8 @@ jar.path=target/scala-2.11/${jar.name}
 job.name=pageRank.PageRank
 local.input=input
 local.output=output
+# Number of top important page in output
+local.topK=100
 # Pseudo-Cluster Execution
 hdfs.user.name=lixie
 hdfs.input=input
@@ -38,7 +40,7 @@ clean-local-output:
 
 # Runs standalone
 alone: clean jar clean-local-output
-	${spark.root}/bin/spark-submit --class ${job.name} --master local[*] ${jar.path} ${local.input} ${local.output}
+	${spark.root}/bin/spark-submit --class ${job.name} --master local[*] ${jar.path} ${local.input} ${local.output} ${local.topK}
 
 # Start HDFS
 start-hdfs:

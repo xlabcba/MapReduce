@@ -45,8 +45,11 @@ object PageRank {
   }
   
   def main(args: Array[String]) = {
-
-    val inputs = "input/wikipedia-simple-html.bz2"
+    
+    // Parse args
+    val input = args(0)
+    val output = args(1)
+    val k = Integer.valueOf(args(2))
 
     //Start the Spark context
     val conf = new SparkConf()
@@ -55,7 +58,7 @@ object PageRank {
     val sc = new SparkContext(conf)
 
     // Load input file as RDD
-    val lines = sc.textFile(inputs)
+    val lines = sc.textFile(input)
     .map(line => GraphGenerator.createGraph(line))
     .filter(line => line != null) // Filter out invalid pages
     .persist()
@@ -97,10 +100,10 @@ object PageRank {
     // Top K job
     val topK = pageNodes
     .map(node => (node._1, node._2.pageRank))
-    .top(100)
+    .top(k)
     
     // Save as text file
-    sc.parallelize(topK, 1).saveAsTextFile("output")
+    sc.parallelize(topK, 1).saveAsTextFile(output)
     
     //Stop the Spark context  
     sc.stop
