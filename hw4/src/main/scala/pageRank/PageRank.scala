@@ -57,13 +57,10 @@ object PageRank {
     val sc = new SparkContext(conf)
 
     // Load input file as RDD
-    val lines = sc.textFile(input)
+    // and do Pre-process job
+    val graph = sc.textFile(input)
     .map(line => GraphGenerator.createGraph(line))
     .filter(line => line != null) // Filter out invalid pages
-    .persist()
-    
-    // Pre-Process on initial graph
-    val graph = lines
     .flatMap(emitPageNode)
     .reduceByKey((adjList1, adjList2) => adjList1 ::: adjList2)
     .persist()
