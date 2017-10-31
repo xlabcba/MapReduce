@@ -12,6 +12,8 @@ local.input=input
 local.output=output
 # Number of top important page in output
 local.topK=100
+# Switch on debug logging
+local.debug=true
 # Pseudo-Cluster Execution
 hdfs.user.name=lixie
 hdfs.input=input
@@ -42,7 +44,7 @@ clean-local-output:
 
 # Runs standalone
 alone: clean jar clean-local-output
-	${spark.root}/bin/spark-submit --class ${job.name} --master ${local.master} ${jar.path} ${local.input} ${local.output} ${local.topK}
+	${spark.root}/bin/spark-submit --class ${job.name} --master ${local.master} ${jar.path} ${local.input} ${local.output} ${local.topK} ${local.debug}
 
 # Start HDFS
 start-hdfs:

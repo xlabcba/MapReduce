@@ -50,6 +50,7 @@ object PageRank {
     val input = args(0)
     val output = args(1)
     val k = Integer.valueOf(args(2))
+    val debug = if (args(3).equalsIgnoreCase("true")) true else false
 
     //Start the Spark context
     val conf = new SparkConf()
@@ -65,29 +66,37 @@ object PageRank {
     .reduceByKey((adjList1, adjList2) => adjList1 ::: adjList2)
     .persist()
     
-    val graphUseMemory = graph.getStorageLevel.useMemory
-    println(s"[DEBUG] GRAPH USES MEMORY: ${graphUseMemory}")
+    // Debug logging
+    if (debug) {
+      val graphUseMemory = graph.getStorageLevel.useMemory
+      println(s"[DEBUG] GRAPH USES MEMORY: ${graphUseMemory}")
+    }
     
     // Count total valid page and add initial pagerank
     val pageCount = graph.count()
-    println(s"[DEBUG] PAGE COUNT: ${pageCount}")
     val initPageRank = 1.0 / pageCount
     var pageNodes = graph
     .map(pageNode => (pageNode._1, PageNode(initPageRank, pageNode._2)))
     .persist()
     
-    val nodesUseMemory = pageNodes.getStorageLevel.useMemory
-    println(s"[DEBUG] NODES USES MEMORY: ${nodesUseMemory}")
+    // Debug logging
+    if (debug) {
+      println(s"[DEBUG] PAGE COUNT: ${pageCount}")
+      val nodesUseMemory = pageNodes.getStorageLevel.useMemory
+      println(s"[DEBUG] NODES USES MEMORY: ${nodesUseMemory}")
+    }
     
     // 10 times of Pagerank job
     for ( i <- 1 to 10 ) {
-      println(s"[DEBUG] LOOP ${i}")
+      // Debug logging
+      if (debug) {
+        println(s"[DEBUG] LOOP ${i}")
+      }
       
       // Calculate delta sum (pagerank sum of dangling nodes)
       val deltaSum = pageNodes
       .filter(node => node._2.adjList.length == 0)
       .aggregate(0.0)((curSum, node) => curSum + node._2.pageRank, (sum1, sum2) => sum1 + sum2)
-      println(s"[DEBUG] DELTA SUM: ${deltaSum}")
         
       // Distribute  and accumulate contributions 
       pageNodes = pageNodes
@@ -96,12 +105,15 @@ object PageRank {
       .mapValues(node => PageNode(0.15 / pageCount + 0.85 * (node.pageRank + deltaSum / pageCount), node.adjList))
       .persist()
       
-      val pageNodesUseMemory = pageNodes.getStorageLevel.useMemory
-      println(s"[DEBUG] IN-LOOP NODES USES MEMORY: ${pageNodesUseMemory}")
-      
-      val pageRankSum = pageNodes
-      .aggregate(0.0)((curSum, node) => (curSum + node._2.pageRank), (sum1, sum2) => sum1 + sum2)
-      println(s"[DEBUG] PAGE RANK SUM: ${pageRankSum}")
+      // Debug logging
+      if (debug) {
+        println(s"[DEBUG] DELTA SUM: ${deltaSum}")
+        val pageNodesUseMemory = pageNodes.getStorageLevel.useMemory
+        println(s"[DEBUG] IN-LOOP NODES USES MEMORY: ${pageNodesUseMemory}")
+        val pageRankSum = pageNodes
+        .aggregate(0.0)((curSum, node) => (curSum + node._2.pageRank), (sum1, sum2) => sum1 + sum2)
+        println(s"[DEBUG] PAGE RANK SUM: ${pageRankSum}")
+      }
     }
     
     // Top K job
