@@ -6,6 +6,8 @@ spark.root=/Users/lixie/spark
 jar.name=pagerank_2.11-1.0.jar
 jar.path=target/scala-2.11/${jar.name}
 job.name=pageRank.PageRank
+# Number of cores to run the job in parallel
+local.master=local[*]
 local.input=input
 local.output=output
 # Number of top important page in output
@@ -40,7 +42,7 @@ clean-local-output:
 
 # Runs standalone
 alone: clean jar clean-local-output
-	${spark.root}/bin/spark-submit --class ${job.name} --master local[*] ${jar.path} ${local.input} ${local.output} ${local.topK}
+	${spark.root}/bin/spark-submit --class ${job.name} --master ${local.master} ${jar.path} ${local.input} ${local.output} ${local.topK}
 
 # Start HDFS
 start-hdfs:

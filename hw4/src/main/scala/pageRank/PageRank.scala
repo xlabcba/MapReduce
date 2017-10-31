@@ -54,7 +54,6 @@ object PageRank {
     //Start the Spark context
     val conf = new SparkConf()
       .setAppName("Page Rank")
-      .setMaster("local[*]")
     val sc = new SparkContext(conf)
 
     // Load input file as RDD
