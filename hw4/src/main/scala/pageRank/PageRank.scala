@@ -68,12 +68,19 @@ object PageRank {
     .reduceByKey((adjList1, adjList2) => adjList1 ::: adjList2)
     .persist()
     
+    val graphUseMemory = graph.getStorageLevel.useMemory
+    println(s"[DEBUG] GRAPH USES MEMORY: ${graphUseMemory}")
+    
     // Count total valid page and add initial pagerank
     val pageCount = graph.count()
     println(s"[DEBUG] PAGE COUNT: ${pageCount}")
     val initPageRank = 1.0 / pageCount
     var pageNodes = graph
     .map(pageNode => (pageNode._1, PageNode(initPageRank, pageNode._2)))
+    .persist()
+    
+    val nodesUseMemory = pageNodes.getStorageLevel.useMemory
+    println(s"[DEBUG] NODES USES MEMORY: ${nodesUseMemory}")
     
     // 10 times of Pagerank job
     for ( i <- 1 to 10 ) {
@@ -89,7 +96,11 @@ object PageRank {
       pageNodes = pageNodes
       .flatMap(distributeContribution)
       .reduceByKey(accumulateContribution)
-      .mapValues(node => PageNode(0.15 / pageCount + 0.85 * (node.pageRank + deltaSum / pageCount), node.adjList))     
+      .mapValues(node => PageNode(0.15 / pageCount + 0.85 * (node.pageRank + deltaSum / pageCount), node.adjList))
+      .persist()
+      
+      val pageNodesUseMemory = pageNodes.getStorageLevel.useMemory
+      println(s"[DEBUG] IN-LOOP NODES USES MEMORY: ${pageNodesUseMemory}")
       
       val pageRankSum = pageNodes
       .aggregate(0.0)((curSum, node) => (curSum + node._2.pageRank), (sum1, sum2) => sum1 + sum2)
