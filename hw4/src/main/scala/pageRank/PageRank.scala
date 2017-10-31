@@ -8,7 +8,7 @@ import wikiParser.GraphGenerator;
 
 object PageRank {
   
-  case class PageNode(pageRank:Double,adjList:List[String])
+  case class PageNode(pageRank:Double, adjList:List[String])
   	
   implicit val sortTupleByDoubleAndString = new Ordering[(String, Double)] {
     override def compare(a: (String, Double), b: (String, Double)) = {
