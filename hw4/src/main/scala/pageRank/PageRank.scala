@@ -7,7 +7,9 @@ import org.apache.spark.SparkContext._;
 import wikiParser.GraphGenerator;
 
 object PageRank {
-    	
+  
+  case class PageNode(pageRank:Double,adjList:List[String])
+  	
   implicit val sortTupleByDoubleAndString = new Ordering[(String, Double)] {
     override def compare(a: (String, Double), b: (String, Double)) = {
       if (a._2 > b._2) {
@@ -29,17 +31,17 @@ object PageRank {
     pageNode ::: adjNodes
   }
   
-  def distributeContribution(node: (String, (Double, List[String]))) : List[(String, (Double, List[String]))] = {
+  def distributeContribution(node: (String, PageNode)) : List[(String, PageNode)] = {
     val pageName = node._1
-    val adjList = node._2._2
-    val contribution = node._2._1 / adjList.length
-    val nodeStructure = List((pageName, (0.0, adjList)))
-    val contributionList = node._2._2.map(adjNode => (adjNode, (contribution, List[String]())))
+    val adjList = node._2.adjList
+    val contribution = node._2.pageRank / adjList.length
+    val nodeStructure = List((pageName, PageNode(0.0, adjList)))
+    val contributionList = adjList.map(adjNode => (adjNode, PageNode(contribution, List[String]())))
     nodeStructure ::: contributionList
   }
   
-  def accumulateContribution(node1: (Double, List[String]), node2: (Double, List[String])) : (Double, List[String]) = {
-    (node1._1 + node2._1, node1._2 ::: node2._2)
+  def accumulateContribution(node1: PageNode, node2: PageNode) : PageNode = {
+    PageNode(node1.pageRank + node2.pageRank, node1.adjList ::: node2.adjList)
   }
   
   def main(args: Array[String]) = {
@@ -69,7 +71,7 @@ object PageRank {
     println(s"[DEBUG] PAGE COUNT: ${pageCount}")
     val initPageRank = 1.0 / pageCount
     var pageNodes = graph
-    .map(pageNode => (pageNode._1, (initPageRank, pageNode._2)))
+    .map(pageNode => (pageNode._1, PageNode(initPageRank, pageNode._2)))
     
     // 10 times of Pagerank job
     for ( i <- 1 to 10 ) {
@@ -77,24 +79,24 @@ object PageRank {
       
       // Calculate delta sum (pagerank sum of dangling nodes)
       val deltaSum = pageNodes
-      .filter(node => node._2._2.length == 0)
-      .aggregate(0.0)((curSum, node) => curSum + node._2._1, (sum1, sum2) => sum1 + sum2)
+      .filter(node => node._2.adjList.length == 0)
+      .aggregate(0.0)((curSum, node) => curSum + node._2.pageRank, (sum1, sum2) => sum1 + sum2)
       println(s"[DEBUG] DELTA SUM: ${deltaSum}")
         
       // Distribute  and accumulate contributions 
       pageNodes = pageNodes
       .flatMap(distributeContribution)
       .reduceByKey(accumulateContribution)
-      .mapValues(t => (0.15 / pageCount + 0.85 * (t._1 + deltaSum / pageCount), t._2))     
+      .mapValues(node => PageNode(0.15 / pageCount + 0.85 * (node.pageRank + deltaSum / pageCount), node.adjList))     
       
       val pageRankSum = pageNodes
-      .aggregate(0.0)((curSum, node) => (curSum + node._2._1), (sum1, sum2) => sum1 + sum2)
+      .aggregate(0.0)((curSum, node) => (curSum + node._2.pageRank), (sum1, sum2) => sum1 + sum2)
       println(s"[DEBUG] PAGE RANK SUM: ${pageRankSum}")
     }
     
     // Top K job
     val topK = pageNodes
-    .map(node => (node._1, node._2._1))
+    .map(node => (node._1, node._2.pageRank))
     .top(100)
     
     // Save as text file
