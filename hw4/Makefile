@@ -13,7 +13,7 @@ local.output=output
 # Number of top important page in output
 local.topK=100
 # Switch on debug logging
-local.debug=true
+local.debug=false
 # Pseudo-Cluster Execution
 hdfs.user.name=lixie
 hdfs.input=input

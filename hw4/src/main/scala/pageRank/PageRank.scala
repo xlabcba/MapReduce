@@ -31,17 +31,17 @@ object PageRank {
     pageNode ::: adjNodes
   }
   
-  def distributeContribution(node: (String, PageNode)) : List[(String, PageNode)] = {
+  def distributeContribution(node: (String, (Double, List[String]))) : List[(String, Double)] = {
     val pageName = node._1
-    val adjList = node._2.adjList
-    val contribution = node._2.pageRank / adjList.length
-    val nodeStructure = List((pageName, PageNode(0.0, adjList)))
-    val contributionList = adjList.map(adjNode => (adjNode, PageNode(contribution, List[String]())))
+    val adjList = node._2._2
+    val contribution = node._2._1 / adjList.length
+    val nodeStructure = List((pageName, 0.0))
+    val contributionList = adjList.map(adjNode => (adjNode, contribution))
     nodeStructure ::: contributionList
   }
   
-  def accumulateContribution(node1: PageNode, node2: PageNode) : PageNode = {
-    PageNode(node1.pageRank + node2.pageRank, node1.adjList ::: node2.adjList)
+  def accumulateContribution(rank1: Double, rank2: Double) : Double = {
+    rank1 + rank2
   }
   
   def main(args: Array[String]) = {
@@ -66,24 +66,20 @@ object PageRank {
     .reduceByKey((adjList1, adjList2) => adjList1 ::: adjList2)
     .persist()
     
-    // Debug logging
-    if (debug) {
-      val graphUseMemory = graph.getStorageLevel.useMemory
-      println(s"[DEBUG] GRAPH USES MEMORY: ${graphUseMemory}")
-    }
-    
     // Count total valid page and add initial pagerank
     val pageCount = graph.count()
     val initPageRank = 1.0 / pageCount
-    var pageNodes = graph
-    .map(pageNode => (pageNode._1, PageNode(initPageRank, pageNode._2)))
+    var ranks = graph
+    .map(node => (node._1, initPageRank))
     .persist()
     
     // Debug logging
     if (debug) {
       println(s"[DEBUG] PAGE COUNT: ${pageCount}")
-      val nodesUseMemory = pageNodes.getStorageLevel.useMemory
-      println(s"[DEBUG] NODES USES MEMORY: ${nodesUseMemory}")
+      val graphUseMemory = graph.getStorageLevel.useMemory
+      println(s"[DEBUG] GRAPH USES MEMORY: ${graphUseMemory}")
+      val ranksUseMemory = ranks.getStorageLevel.useMemory
+      println(s"[DEBUG] RANKS USES MEMORY: ${ranksUseMemory}")
     }
     
     // 10 times of Pagerank job
@@ -93,36 +89,40 @@ object PageRank {
         println(s"[DEBUG] LOOP ${i}")
       }
       
+      // Join ranks with graph
+      val pageNodes = ranks.join(graph)
+  
       // Calculate delta sum (pagerank sum of dangling nodes)
       val deltaSum = pageNodes
-      .filter(node => node._2.adjList.length == 0)
-      .aggregate(0.0)((curSum, node) => curSum + node._2.pageRank, (sum1, sum2) => sum1 + sum2)
+      .filter(node => node._2._2.length == 0)
+      .aggregate(0.0)((curSum, node) => curSum + node._2._1, (sum1, sum2) => sum1 + sum2)
         
+      ranks.unpersist()
+      
       // Distribute  and accumulate contributions 
-      pageNodes = pageNodes
+      ranks = pageNodes
       .flatMap(distributeContribution)
       .reduceByKey(accumulateContribution)
-      .mapValues(node => PageNode(0.15 / pageCount + 0.85 * (node.pageRank + deltaSum / pageCount), node.adjList))
+      .mapValues(rank => 0.15 / pageCount + 0.85 * (rank + deltaSum / pageCount))
       .persist()
       
       // Debug logging
       if (debug) {
         println(s"[DEBUG] DELTA SUM: ${deltaSum}")
-        val pageNodesUseMemory = pageNodes.getStorageLevel.useMemory
-        println(s"[DEBUG] IN-LOOP NODES USES MEMORY: ${pageNodesUseMemory}")
-        val pageRankSum = pageNodes
-        .aggregate(0.0)((curSum, node) => (curSum + node._2.pageRank), (sum1, sum2) => sum1 + sum2)
+        val loopRanksUseMemory = ranks.getStorageLevel.useMemory
+        println(s"[DEBUG] IN-LOOP NODES USES MEMORY: ${loopRanksUseMemory}")
+        val pageRankSum = ranks
+        .aggregate(0.0)((curSum, node) => (curSum + node._2), (sum1, sum2) => sum1 + sum2)
         println(s"[DEBUG] PAGE RANK SUM: ${pageRankSum}")
       }
     }
     
     // Top K job
-    val topK = pageNodes
-    .map(node => (node._1, node._2.pageRank))
-    .top(k)
+    val topK = ranks.top(k)
     
     // Save as text file
     sc.parallelize(topK, 1).saveAsTextFile(output)
+    Thread.sleep(1000000000)
     
     //Stop the Spark context  
     sc.stop
