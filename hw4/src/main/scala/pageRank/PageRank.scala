@@ -122,7 +122,7 @@ object PageRank {
     
     // Save as text file
     sc.parallelize(topK, 1).saveAsTextFile(output)
-    Thread.sleep(1000000000)
+    // Thread.sleep(1000000000)
     
     //Stop the Spark context  
     sc.stop
