@@ -31,6 +31,10 @@ object PageRank {
     pageNode ::: adjNodes
   }
   
+  def mergePageNode(adjList1: List[String], adjList2: List[String]) : List[String] = {
+      adjList1 ::: adjList2
+  }
+    
   def distributeContribution(node: (String, (Double, List[String]))) : List[(String, Double)] = {
     val pageName = node._1
     val adjList = node._2._2
@@ -63,7 +67,7 @@ object PageRank {
     .map(line => GraphGenerator.createGraph(line))
     .filter(line => line != null) // Filter out invalid pages
     .flatMap(emitPageNode)
-    .reduceByKey((adjList1, adjList2) => adjList1 ::: adjList2)
+    .reduceByKey(mergePageNode)
     .persist()
     
     // Count total valid page and add initial pagerank
