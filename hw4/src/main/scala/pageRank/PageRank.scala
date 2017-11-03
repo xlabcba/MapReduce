@@ -7,9 +7,10 @@ import org.apache.spark.SparkContext._;
 import wikiParser.GraphGenerator;
 
 object PageRank {
-  
-  case class PageNode(pageRank:Double, adjList:List[String])
   	
+  // Ordering for top K operation, which order pairRDD 
+  // firstly by pageRank in increasing order
+  // then by pageName in lexicographically decreasing order
   implicit val sortTupleByDoubleAndString = new Ordering[(String, Double)] {
     override def compare(a: (String, Double), b: (String, Double)) = {
       if (a._2 > b._2) {
@@ -22,6 +23,8 @@ object PageRank {
     }
   }
   
+  // Map String of <pageName>~~~<adjName0>~<adjName1>...
+  // into List of PairRDD of (name, adjList)
   def emitPageNode(node: String) : List[(String, List[String])] = {
     val pageArray = node.split("~~~")
     val pageName = pageArray(0)
@@ -31,10 +34,13 @@ object PageRank {
     pageNode ::: adjNodes
   }
   
+  // Merge two pair of (name, adjList) by concatenating their adjList
   def mergePageNode(adjList1: List[String], adjList2: List[String]) : List[String] = {
       adjList1 ::: adjList2
   }
     
+  // Map pair of (name, pageRank)
+  // into List of PairRDD of (pageName, 0) and (adjName, pageRankContribution)
   def distributeContribution(node: (String, (Double, List[String]))) : List[(String, Double)] = {
     val pageName = node._1
     val adjList = node._2._2
@@ -44,6 +50,8 @@ object PageRank {
     nodeStructure ::: contributionList
   }
   
+  // Merge two pair of (name, inlinkContribution)
+  // into pair (name, inlinkContributionSum) by adding contributions up
   def accumulateContribution(rank1: Double, rank2: Double) : Double = {
     rank1 + rank2
   }
@@ -72,9 +80,9 @@ object PageRank {
     
     // Count total valid page and add initial pagerank
     val pageCount = graph.count()
-    val initPageRank = 1.0 / pageCount
-    var ranks = graph
-    .map(node => (node._1, initPageRank))
+    val initialPageRank = 1.0 / pageCount
+    var pageRanks = graph
+    .map(node => (node._1, initialPageRank))
     .persist()
     
     // Debug logging
@@ -82,7 +90,7 @@ object PageRank {
       println(s"[DEBUG] PAGE COUNT: ${pageCount}")
       val graphUseMemory = graph.getStorageLevel.useMemory
       println(s"[DEBUG] GRAPH USES MEMORY: ${graphUseMemory}")
-      val ranksUseMemory = ranks.getStorageLevel.useMemory
+      val ranksUseMemory = pageRanks.getStorageLevel.useMemory
       println(s"[DEBUG] RANKS USES MEMORY: ${ranksUseMemory}")
     }
     
@@ -94,17 +102,18 @@ object PageRank {
       }
       
       // Join ranks with graph
-      val pageNodes = ranks.join(graph)
+      val pageNodes = pageRanks.join(graph)
   
       // Calculate delta sum (pagerank sum of dangling nodes)
       val deltaSum = pageNodes
       .filter(node => node._2._2.length == 0)
       .aggregate(0.0)((curSum, node) => curSum + node._2._1, (sum1, sum2) => sum1 + sum2)
         
-      ranks.unpersist()
+      // Unpersist previous pageRanks to save memory
+      pageRanks.unpersist()
       
       // Distribute  and accumulate contributions 
-      ranks = pageNodes
+      pageRanks = pageNodes
       .flatMap(distributeContribution)
       .reduceByKey(accumulateContribution)
       .mapValues(rank => 0.15 / pageCount + 0.85 * (rank + deltaSum / pageCount))
@@ -113,20 +122,22 @@ object PageRank {
       // Debug logging
       if (debug) {
         println(s"[DEBUG] DELTA SUM: ${deltaSum}")
-        val loopRanksUseMemory = ranks.getStorageLevel.useMemory
+        val loopRanksUseMemory = pageRanks.getStorageLevel.useMemory
         println(s"[DEBUG] IN-LOOP NODES USES MEMORY: ${loopRanksUseMemory}")
-        val pageRankSum = ranks
+        val pageRankSum = pageRanks
         .aggregate(0.0)((curSum, node) => (curSum + node._2), (sum1, sum2) => sum1 + sum2)
         println(s"[DEBUG] PAGE RANK SUM: ${pageRankSum}")
       }
     }
     
     // Top K job
-    val topK = ranks.top(k)
+    // which find largest k pair of (name, pageRank)
+    // which is ordered firstly by pageRank in increasing order
+    // and then by name in lexicographically in decreasing order
+    val topK = pageRanks.top(k)
     
     // Save as text file
     sc.parallelize(topK, 1).saveAsTextFile(output)
-    // Thread.sleep(1000000000)
     
     //Stop the Spark context  
     sc.stop

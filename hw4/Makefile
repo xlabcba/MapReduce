@@ -25,6 +25,10 @@ aws.bucket.name=lixiebucket
 aws.subnet.id=subnet-f1ca3cba
 aws.input=input
 aws.output=output
+# Number of top important page in output
+aws.topK=100
+# Switch on debug logging
+aws.debug=false
 aws.log.dir=log
 aws.num.nodes=10
 aws.instance.type=m4.large
@@ -116,16 +120,17 @@ upload-app-aws:
 	aws s3 cp ${jar.path} s3://${aws.bucket.name}
 
 # Main EMR launch.
-cloud: jar upload-app-aws delete-output-aws
+cloud: clean jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "Wiki Page Rank Cluster" \
+		--name "Spark Wiki Page Rank Cluster" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
-	    --applications Name=Hadoop \
-	    --steps '[{"Args":["${job.name}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.output}","${aws.topK}","${aws.printConvergeRate}"],"Type":"CUSTOM_JAR","Jar":"s3://${aws.bucket.name}/${jar.name}","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
+		--applications Name=Spark \
+		--steps '[{"Name":"Spark Page Rank","Args":["spark-submit","--deploy-mode","cluster","--class","${job.name}","--master","yarn","s3://${aws.bucket.name}/${jar.name}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.output}","${aws.topK}","${aws.debug}"],"Type":"CUSTOM_JAR","Jar":"command-runner.jar","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
 		--log-uri s3://${aws.bucket.name}/${aws.log.dir} \
 		--service-role EMR_DefaultRole \
 		--ec2-attributes InstanceProfile=EMR_EC2_DefaultRole,SubnetId=${aws.subnet.id} \
+		--configurations '[{"Classification":"spark", "Properties":{"maximizeResourceAllocation": "true"}}]' \
 		--region ${aws.region} \
 		--enable-debugging \
 		--auto-terminate
