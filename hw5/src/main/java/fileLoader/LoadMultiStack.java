@@ -21,28 +21,24 @@ public class LoadMultiStack
 			final File imageFile = checkFile(fileName);		
 			final ImageReader reader = buildReader(imageFile, zDim);
 	        final byte imageBytes[] = new byte[xDim * yDim * zDim];
-	        
-//			try (DataInputStream input = new DataInputStream(new FileInputStream(imageFile))) {
-//			    input.readFully(imageBytes);
-//			}
 
 			for (int ix = 0; ix < zDim; ix++) {
 				final BufferedImage image = reader.read(ix);
 		        final DataBuffer dataBuffer = image.getRaster().getDataBuffer();
 		        final byte layerBytes[] = ((DataBufferByte)dataBuffer).getData();
-				System.out.println(layerBytes.length + "    " + xDim * yDim);
+//				System.out.println(layerBytes.length + "    " + xDim * yDim);
 				System.arraycopy(layerBytes, 0, imageBytes, ix * xDim * yDim, xDim * yDim);
 			}
 
-	        for (int iz = 0 ; iz < zDim ; iz++) {
-	        	System.out.println("--------------------------------------");
-		        for (int iy = 0 ; iy < yDim ; iy++) {
-		        	System.out.println();
-			        for (int ix = 0 ; ix < xDim ; ix++) {
-			        	System.out.print(imageBytes[iz * yDim * xDim + iy * xDim + ix] + " ");
-			        }
-		        }
-	        }
+//	        for (int iz = 0 ; iz < zDim ; iz++) {
+//	        	System.out.println("--------------------------------------");
+//		        for (int iy = 0 ; iy < yDim ; iy++) {
+//		        	System.out.println();
+//			        for (int ix = 0 ; ix < xDim ; ix++) {
+//			        	System.out.print(imageBytes[iz * yDim * xDim + iy * xDim + ix] + " ");
+//			        }
+//		        }
+//	        }
 	        
 	        return imageBytes;
 

@@ -44,7 +44,7 @@ clean-local-output:
 
 # Runs standalone
 alone: clean jar clean-local-output
-	${spark.root}/bin/spark-submit --class ${job.name} --master ${local.master} ${jar.path} ${local.input} ${local.output} ${local.topK} ${local.debug}
+	${spark.root}/bin/spark-submit --driver-memory 4g --class ${job.name} --master ${local.master} ${jar.path} ${local.input} ${local.output} ${local.topK} ${local.debug}
 
 # Start HDFS
 start-hdfs:
