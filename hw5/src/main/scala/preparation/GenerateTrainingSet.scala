@@ -84,16 +84,10 @@ object GenerateTrainingSet {
     val imageMatrix = sc.parallelize(imageArray).zipWithIndex
     .map{case(brightness, index) => (index.toInt, brightness.toInt)}
     .filter{case(index, brightness) => brightness != 0}
-    // .map{case(brightness, index) => toMatrixValue(brightness, index)}
-    // .toDF("I", "X", "Y", "Z", "Brightness")
     .toDF("ImageIdx", "Brightness")
     .persist(StorageLevel.MEMORY_AND_DISK)
     
-    imageMatrix.show()
-        
-    // val imageMap = sc.broadcast(imageMatrix.collectAsMap.toMap)
-    
-    // imageMatrix.rdd.saveAsTextFile(output)    
+    imageMatrix.show()   
  
     val distArray = LoadMultiStack.load(inputDist, 512, 512, 33)
     val labelMatrix = sc.parallelize(distArray).zipWithIndex
@@ -114,26 +108,16 @@ object GenerateTrainingSet {
     
     neighborMatrix.show()
     
-    //val immediateRes = neighborMatrix
-    //.map{case(neighborIdx, index) => (index, List(imageMap.value.getOrElse(neighborIdx, 0)))}
-    //  val x = List(imageMap.value.getOrElse(neighborIdx, 0)) 
-    //  (index, x)}
-    //.reduceByKey(_ ::: _)
-    
     val immediateRes = neighborMatrix.join(imageMatrix, Seq("ImageIdx"), "left_outer")
     .select("LabelIdx", "Brightness")
     .na.fill(0, Seq("Brightness"))
     .persist(StorageLevel.MEMORY_AND_DISK)
     
     immediateRes.show()
-    
-    //val aggregateDataFrames = udf((x: Int, y: Int) => Seq(x,y))
-    
+        
     val neighborBrightness = immediateRes     
     .groupBy("LabelIdx")
     .agg(collect_list($"Brightness"))
-    //.withColumn("list", aggregateDataFrames(immediateRes("Brightness")))
-    //.select("OriginalIdx","list")
     
     neighborBrightness.show()
     
@@ -143,20 +127,5 @@ object GenerateTrainingSet {
     trainingRecord.rdd.saveAsTextFile(output)
     
     // Thread.sleep(1000000000)
-    
-    // labelMatrix.show()
-    // labelMatrix.rdd.saveAsTextFile(output)    
-    
-    // val imageMatrix = imageMatrixP.repartition(1)
-    // val labelMatrix = labelMatrixP.repartition(1)
-    
-    // val mergedTable = labelMatrix
-    // .join(imageMatrix, labelMatrix("NeighborIdx") === imageMatrix("ImageIdx"))
-    // .select(Seq("LabelIdx","Label","Brightness").map(c => col(c)): _*)
-    // .groupBy(labelMatrix("LabelIdx"))
-    // .agg(collect_list("Brightness") as "Brightness")
-    //.show()
-    
-    // mergedTable.show()
   }
 }
