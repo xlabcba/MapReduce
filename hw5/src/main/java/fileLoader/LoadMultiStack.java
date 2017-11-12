@@ -3,19 +3,40 @@ package fileLoader;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.Iterator;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+
 public class LoadMultiStack
 {
 
-    public static byte[] load(String fileName, int xDim, int yDim, int zDim) {
+    public static byte[][] loadImage(String fileName, int xDim, int yDim, int zDim) {
+
+		try {
+			final File imageFile = checkFile(fileName);		
+			final ImageReader reader = buildReader(imageFile, zDim);
+	        final byte[][] imageBytes = new byte[zDim][xDim * yDim];
+
+			for (int iz = 0; iz < zDim; iz++) {
+				final BufferedImage image = reader.read(iz);
+		        final DataBuffer dataBuffer = image.getRaster().getDataBuffer();
+		        final byte layerBytes[] = ((DataBufferByte)dataBuffer).getData();
+				System.arraycopy(layerBytes, 0, imageBytes[iz], 0, xDim * yDim);
+			}
+	        
+	        return imageBytes;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+    
+    public static byte[] loadDist(String fileName, int xDim, int yDim, int zDim) {
 
 		try {
 			final File imageFile = checkFile(fileName);		
@@ -26,19 +47,8 @@ public class LoadMultiStack
 				final BufferedImage image = reader.read(ix);
 		        final DataBuffer dataBuffer = image.getRaster().getDataBuffer();
 		        final byte layerBytes[] = ((DataBufferByte)dataBuffer).getData();
-//				System.out.println(layerBytes.length + "    " + xDim * yDim);
 				System.arraycopy(layerBytes, 0, imageBytes, ix * xDim * yDim, xDim * yDim);
 			}
-
-//	        for (int iz = 0 ; iz < zDim ; iz++) {
-//	        	System.out.println("--------------------------------------");
-//		        for (int iy = 0 ; iy < yDim ; iy++) {
-//		        	System.out.println();
-//			        for (int ix = 0 ; ix < xDim ; ix++) {
-//			        	System.out.print(imageBytes[iz * yDim * xDim + iy * xDim + ix] + " ");
-//			        }
-//		        }
-//	        }
 	        
 	        return imageBytes;
 
