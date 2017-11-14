@@ -14,8 +14,8 @@ import fileLoader.LoadMultiStack
 
 object GenerateTrainingSet {      
   
-  def toMatrixCoord(index: Int) : (Int, Int, Int) = {
-    val xDim = 512; val yDim = 512; val zDim = 60;
+  def toMatrixCoord(index: Int, imageSize: (Int, Int, Int)) : (Int, Int, Int) = {
+    val (xDim, yDim, zDim) = imageSize;
     val z = index / (xDim * yDim)
     val remain = index - (z * xDim * yDim)
     val y = remain / xDim;
@@ -23,13 +23,13 @@ object GenerateTrainingSet {
     (x, y, z)
   }
   
-  def toArrayIdx(x: Int, y: Int, z: Int) : Int = {
-    val xDim = 512; val yDim = 512; val zDim = 60;
+  def toArrayIdx(x: Int, y: Int, z: Int, imageSize: (Int, Int, Int)) : Int = {
+    val (xDim, yDim, zDim) = imageSize;
     z * xDim * yDim + y * xDim + x
   }
   
-  def toPlaneIdx(x: Int, y: Int) : Int = {
-    val xDim = 512; val yDim = 512
+  def toPlaneIdx(x: Int, y: Int, imageSize: (Int, Int, Int)) : Int = {
+    val (xDim, yDim, zDim) = imageSize;
     y * xDim + x
   }
   
@@ -43,67 +43,67 @@ object GenerateTrainingSet {
     }
   }
   
-  def generateNeighbors(i: Int, x: Int, y: Int, z: Int) : List[(Int, Int)] = {
-    val xNum = 3; val yNum = 3; val zNum = 3;
-    val xDim = 512; val yDim = 512; val zDim = 60;
-    val res = new Array[(Int, Int)](xNum * yNum * zNum)
-    var cur = 0
-    for (dx <- -(xNum / 2) to (xNum / 2)) {
-      for (dy <- -(yNum / 2) to (yNum / 2)) {
-        for (dz <- -(zNum / 2) to (zNum / 2)) {
-          val (nx, ny, nz) = (x + dx, y + dy, z + dz)
-          if (nx < 0 || nx >= xDim || ny < 0 || ny >= yDim || nz < 0 || nz >= zDim) {
-            return List((-1, i))
-          }
-          val neighborIdx = nz * xNum * yNum + ny * xNum + nx
-          // val currIdx = (zNum / 2 + dz) * xNum * yNum + (yNum / 2 + dy) * xNum + (xNum / 2 + dx)
-          res(cur) = (neighborIdx, i)
-          cur += 1
-        }
-      }
-    }
-    return res.toList
-  }
+//  def generateNeighbors(i: Int, x: Int, y: Int, z: Int) : List[(Int, Int)] = {
+//    val xNum = 3; val yNum = 3; val zNum = 3;
+//    val xDim = 512; val yDim = 512; val zDim = 60;
+//    val res = new Array[(Int, Int)](xNum * yNum * zNum)
+//    var cur = 0
+//    for (dx <- -(xNum / 2) to (xNum / 2)) {
+//      for (dy <- -(yNum / 2) to (yNum / 2)) {
+//        for (dz <- -(zNum / 2) to (zNum / 2)) {
+//          val (nx, ny, nz) = (x + dx, y + dy, z + dz)
+//          if (nx < 0 || nx >= xDim || ny < 0 || ny >= yDim || nz < 0 || nz >= zDim) {
+//            return List((-1, i))
+//          }
+//          val neighborIdx = nz * xNum * yNum + ny * xNum + nx
+//          // val currIdx = (zNum / 2 + dz) * xNum * yNum + (yNum / 2 + dy) * xNum + (xNum / 2 + dx)
+//          res(cur) = (neighborIdx, i)
+//          cur += 1
+//        }
+//      }
+//    }
+//    return res.toList
+//  }
   
-  def emitNeighbors(index: Long, value: Byte) : List[(Int, List[Int])] = {
-    val xNum = 3; val yNum = 3; val zNum = 3;
-    val xDim = 512; val yDim = 512; val zDim = 60;
-    val (x, y, z) = toMatrixCoord(index.toInt)
-    val res = new Array[(Int, List[Int])](xNum * yNum * zNum)
-    var cur = 0
-    for (dx <- -(xNum / 2) to (xNum / 2)) {
-      for (dy <- -(yNum / 2) to (yNum / 2)) {
-        for (dz <- -(zNum / 2) to (zNum / 2)) {
-          val (nx, ny, nz) = (x + dx, y + dy, z + dz)
-          var neighborIdx = 0
-          if (nx < 0 || nx >= xDim || ny < 0 || ny >= yDim || nz < 0 || nz >= zDim) {
-            neighborIdx = -1
-          } else {
-            neighborIdx = nz * xNum * yNum + ny * xNum + nx
-          }
-          // val currIdx = (zNum / 2 + dz) * xNum * yNum + (yNum / 2 + dy) * xNum + (xNum / 2 + dx)
-          res(cur) = (neighborIdx, List(value.toInt))
-          cur += 1
-        }
-      }
-    }
-    return res.toList
-  }
+//  def emitNeighbors(index: Long, value: Byte) : List[(Int, List[Int])] = {
+//    val xNum = 3; val yNum = 3; val zNum = 3;
+//    val xDim = 512; val yDim = 512; val zDim = 60;
+//    val (x, y, z) = toMatrixCoord(index.toInt)
+//    val res = new Array[(Int, List[Int])](xNum * yNum * zNum)
+//    var cur = 0
+//    for (dx <- -(xNum / 2) to (xNum / 2)) {
+//      for (dy <- -(yNum / 2) to (yNum / 2)) {
+//        for (dz <- -(zNum / 2) to (zNum / 2)) {
+//          val (nx, ny, nz) = (x + dx, y + dy, z + dz)
+//          var neighborIdx = 0
+//          if (nx < 0 || nx >= xDim || ny < 0 || ny >= yDim || nz < 0 || nz >= zDim) {
+//            neighborIdx = -1
+//          } else {
+//            neighborIdx = nz * xNum * yNum + ny * xNum + nx
+//          }
+//          // val currIdx = (zNum / 2 + dz) * xNum * yNum + (yNum / 2 + dy) * xNum + (xNum / 2 + dx)
+//          res(cur) = (neighborIdx, List(value.toInt))
+//          cur += 1
+//        }
+//      }
+//    }
+//    return res.toList
+//  }
   
-  def emitNeighborPlanes(z: Long, stackMatrix: Array[Byte]) : List[(Int, List[(Int, Array[Byte])])] = {
-    val (xNum, yNum, zNum) = (3, 3, 3)
-    val (xDim, yDim, zDim) = (512, 512, 60)
-    val curz = z.toInt
-    val res = ListBuffer.empty[(Int, List[(Int, Array[Byte])])]
-    for (dz <- -(zNum / 2) to (zNum / 2)) {
-      val nz = curz + dz
-      if (0 <= nz && nz < zDim) {
-        val add = (nz, List((curz, stackMatrix)))
-        res += add
-      }
-    }
-    res.toList
-  }
+//  def emitNeighborPlanes(z: Long, stackMatrix: Array[Byte]) : List[(Int, List[(Int, Array[Byte])])] = {
+//    val (xNum, yNum, zNum) = (3, 3, 3)
+//    val (xDim, yDim, zDim) = (512, 512, 60)
+//    val curz = z.toInt
+//    val res = ListBuffer.empty[(Int, List[(Int, Array[Byte])])]
+//    for (dz <- -(zNum / 2) to (zNum / 2)) {
+//      val nz = curz + dz
+//      if (0 <= nz && nz < zDim) {
+//        val add = (nz, List((curz, stackMatrix)))
+//        res += add
+//      }
+//    }
+//    res.toList
+//  }
   
 //  def emitNeighborPixels(z: Int, stackMap: Map[Int, Array[Byte]]) : List[(Int, List[Byte])] = {
 //    val (xNum, yNum, zNum) = (3, 3, 3)
@@ -130,13 +130,13 @@ object GenerateTrainingSet {
   def findNeighbors(i: Int, neighborSize: (Int, Int, Int), imageSize: (Int, Int, Int)) : List[Int] = {
     val (xNum, yNum, zNum) = neighborSize
     val (xDim, yDim, zDim) = imageSize
-    val (x, y, z) = toMatrixCoord(i)
+    val (x, y, z) = toMatrixCoord(i, imageSize)
     val res = ListBuffer.empty[Int]
     for (dx <- -(xNum / 2) to (xNum / 2)) {
       for (dy <- -(yNum / 2) to (yNum / 2)) {
         val (nx, ny) = (x + dx, y + dy)
         if (isValidPixel(nx, ny, 0, imageSize)) {
-          res += toPlaneIdx(nx, ny)
+          res += toPlaneIdx(nx, ny, imageSize)
         }
       }
     }
@@ -148,13 +148,61 @@ object GenerateTrainingSet {
     x >= 0 && x < xDim && y >= 0 && y < yDim && z >= 0 && z < zDim
   }
   
-  def isValidStack(stackIdx: Int, zNum: Int, zDim: Int): Boolean = {
+  def isValidStack(stackIdx: Int, zNum: Int, zDim: Int) : Boolean = {
     stackIdx >= zNum / 2 && stackIdx < zDim - zNum / 2
   }
   
-  def isOnEdge(i: Int, xDim: Int, yDim: Int, zDim: Int) : Boolean = {
-    val (x, y, z) = toMatrixCoord(i)
-    x == 0 || x == (xDim - 1) || y == 0 || y == (yDim - 1) || z == 0 || z == (zDim - 1)
+//  def isOnEdge(i: Int, xDim: Int, yDim: Int, zDim: Int) : Boolean = {
+//    val (x, y, z) = toMatrixCoord(i)
+//    x == 0 || x == (xDim - 1) || y == 0 || y == (yDim - 1) || z == 0 || z == (zDim - 1)
+//  }
+  
+  def rotate(neighbor: List[Byte], neighborSize: (Int, Int, Int)) : List[Byte] = {
+    val (xNum, yNum, zNum) = neighborSize
+    val matrix = toThreeDMatrix(neighbor, neighborSize)
+    val res = Array.ofDim[Byte](zNum, xNum, yNum)   
+    for (z <- 0 until zNum) {
+      res(z) = matrix(z).transpose.map(_.reverse)
+      println("-----------------------------------------")
+      matrix(z) foreach { row => row foreach print; println }
+      res(z) foreach { row => row foreach print; println }
+      println("-----------------------------------------")
+    }
+    toOneDArray(res, (yNum, xNum, zNum))
+  }
+  
+  def mirror(neighbor: List[Byte], neighborSize: (Int, Int, Int)) : List[Byte] = {
+    val (xNum, yNum, zNum) = neighborSize
+    val matrix = toThreeDMatrix(neighbor, neighborSize)
+    val res = Array.ofDim[Byte](zNum, yNum, xNum)   
+    for (z <- 0 until zNum) {
+      res(z) = matrix(z).map(_.reverse)
+      println("-----------------------------------------")
+      matrix(z) foreach { row => row foreach print; println }
+      res(z) foreach { row => row foreach print; println }
+      println("-----------------------------------------")
+    }
+    toOneDArray(res, (xNum, yNum, zNum))
+  }
+  
+  def toThreeDMatrix(array: List[Byte], neighborSize: (Int, Int, Int)) : Array[Array[Array[Byte]]] = {
+    val (xNum, yNum, zNum) = neighborSize
+    val res = Array.ofDim[Byte](zNum, xNum, yNum)   
+    for (i <- 0 until xNum * yNum * zNum) {
+      val (z, y, x) = toMatrixCoord(i, (zNum, yNum, xNum))
+      res(z)(y)(x) = array(i)
+    }
+    res
+  }
+  
+  def toOneDArray(matrix: Array[Array[Array[Byte]]], neighborSize: (Int, Int, Int)) : List[Byte] = {
+    val (xNum, yNum, zNum) = neighborSize
+    val res = Array.ofDim[Byte](xNum * yNum * zNum)  
+    for (i <- 0 until xNum * yNum * zNum) {
+      val (z, y, x) = toMatrixCoord(i, (zNum, yNum, xNum))
+      res(i) = matrix(z)(y)(x)
+    }
+    res.toList
   }
       
   def main(args: Array[String]) = {
@@ -166,6 +214,7 @@ object GenerateTrainingSet {
     val inputDists = Array("input/1_dist.tiff", "input/2_dist.tiff", "input/3_dist.tiff", "input/4_dist.tiff", "input/6_dist.tiff")
     val sizes = Array((512, 512, 60), (512, 512, 33), (512, 512, 44), (512, 512, 51), (512, 512, 46))
     val neighborSize = (3, 3, 3)
+    val sampleNo = 12500
     val output = "output"
     
     //Start the Spark context
@@ -179,46 +228,64 @@ object GenerateTrainingSet {
     val sqlContext= new org.apache.spark.sql.SQLContext(sc)
     import sqlContext.implicits._
     
-    val imageRDD = (0 until inputImages.length).map(i => {
-      val array = LoadMultiStack.loadImage(inputImages(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
-      sc.parallelize(array).zipWithIndex.map{case(stackArray, stackIdx) => ((i, stackIdx.toInt), stackArray)}
-    })
-    .reduce(_ union _)
+//    val imageRDD = (0 until inputImages.length).map(i => {
+//      val array = LoadMultiStack.loadImage(inputImages(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
+//      sc.parallelize(array).zipWithIndex.map{case(stackArray, stackIdx) => ((i, stackIdx.toInt), stackArray)}
+//    })
+//    .reduce(_ union _)
+//    
+//    val imageMap = sc.broadcast(imageRDD.collectAsMap)
+//        
+//    val combinedRecords = (0 until inputDists.length).map(i => {
+//      val array = LoadMultiStack.loadImage(inputDists(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
+//      sc.parallelize(array).zipWithIndex.map{case(stackArray, stackIdx) => ((i, stackIdx.toInt), stackArray)}.repartition(sizes(i)._3)
+//    })
+//    .reduce(_ union _)
+//    .filter{case((imageIdx, stackIdx), stackArray) => isValidStack(stackIdx, neighborSize._3, sizes(imageIdx)._3)}
+//    .flatMap{case((imageIdx, stackIdx), stackArray) => {
+//      val (xNum, yNum, zNum) = neighborSize
+//      val (xDim, yDim, zDim) = sizes(imageIdx)
+//      val res = ListBuffer.empty[(Int, Int, Byte, List[Byte])]
+//      val offset = stackIdx * xDim * yDim 
+//      for (i <- 0 until yDim * xDim) {
+//        val pixel = ListBuffer.empty[Byte]
+//        val neighborLst = findNeighbors(i, neighborSize, sizes(imageIdx))
+//        if (neighborLst.length == xNum * yNum) {
+//          for (neighbor <- neighborLst) {
+//            for (dz <- -(zNum / 2) to (zNum / 2)) {
+//              val brightness = imageMap.value(imageIdx, stackIdx + dz)(neighbor)
+//              pixel += brightness
+//            }
+//          }
+//          val curRes = (imageIdx, i + offset, stackArray(i), pixel.toList)
+//          res += curRes
+//        }
+//      }
+//      res.toList
+//    }}
+//    .map{case(imageIdx, pixelIdx, distance, brightnessLst) => (imageIdx, pixelIdx, toLabel(distance), brightnessLst)}
+    // .filter{case(imageIdx, pixelIdx, label, brightnessLst) => label != -1}
+    // .toDF("imageIndex", "pixelIndex", "label", "neighborBrightness")
     
-    val imageMap = sc.broadcast(imageRDD.collectAsMap)
+    // COUNT: 57174638 / 58262400
+    // val sampleRecords = combinedRecords.sample(false, 0.01).limit(sampleNo).rdd
+    // val sampleRecords = sc.parallelize(combinedRecords.takeSample(false, sampleNo))
         
-    val trainingRecords = (0 until inputDists.length).map(i => {
-      val array = LoadMultiStack.loadImage(inputDists(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
-      sc.parallelize(array).zipWithIndex.map{case(stackArray, stackIdx) => ((i, stackIdx.toInt), stackArray)}.repartition(sizes(i)._3)
-    })
-    .reduce(_ union _)
-    .filter{case((imageIdx, stackIdx), stackArray) => isValidStack(stackIdx, neighborSize._3, sizes(imageIdx)._3)}
-    .flatMap{case((imageIdx, stackIdx), stackArray) => {
-      val (xNum, yNum, zNum) = neighborSize
-      val (xDim, yDim, zDim) = sizes(imageIdx)
-      val res = ListBuffer.empty[(Int, Int, Byte, List[Byte])]
-      val offset = stackIdx * xDim * yDim 
-      for (i <- 0 until yDim * xDim) {
-        val pixel = ListBuffer.empty[Byte]
-        val neighborLst = findNeighbors(i, neighborSize, sizes(imageIdx))
-        if (neighborLst.length == xNum * yNum) {
-          for (dz <- -(zNum / 2) to (zNum / 2)) {
-            for (neighbor <- neighborLst) {
-              val brightness = imageMap.value(imageIdx, stackIdx + dz)(neighbor)
-              pixel += brightness
-            }
-          }
-          val curRes = (imageIdx, i + offset, stackArray(i), pixel.toList)
-          res += curRes
-        }
-      }
-      res.toList
-    }}
-    .map{case(imageIdx, pixelIdx, distance, brightnessLst) => (imageIdx, pixelIdx, toLabel(distance), brightnessLst)}
-    .filter{case(imageIdx, pixelIdx, label, brightnessLst) => label != -1}
-    .toDF("imageIndex", "pixelIndex", "label", "neighborBrightness")
+    // println("COUNT: " + sampleRecords.count())
     
-    trainingRecords.show() 
-    Thread.sleep(1000000000)
+    val test = ListBuffer.empty[Byte]
+    for (i <- 0 until neighborSize._1 * neighborSize._2 * neighborSize._3) {
+      test += i.toByte
+    }
+    val original = test.toList
+    println("LIST:" + original)
+    val first = mirror(original, neighborSize)
+    println("FIRST:" + first)
+    
+    
+
+    // val rotateFirst = sampleRecords.map{case(imageIdx, pixelIdx, label, brightnessLst) => (imageIdx, pixelIdx, label, rotate(brightnessLst, neighborSize))}
+    
+    //Thread.sleep(1000000000)
   }
 }
