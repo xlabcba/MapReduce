@@ -33,6 +33,8 @@ public class LoadMultiStack
 				}			
 				r.setDataElements(0, 0, xDim, yDim, array);
 				String filename = fileName + "_layer" + iz + ".tiff";
+				File file = new File(filename);
+				file.getParentFile().mkdirs();
 				ImageIO.write(b, "TIFF", new File(filename));
 				System.out.println(filename + "saved");
 			}
