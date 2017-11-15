@@ -3,7 +3,9 @@ package fileLoader;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
+import java.awt.image.WritableRaster;
 import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 
 import javax.imageio.ImageIO;
@@ -13,6 +15,32 @@ import javax.imageio.stream.ImageInputStream;
 
 public class LoadMultiStack
 {
+    public static void saveImages(byte[][][] matrix, String fileName) {
+
+		try {
+			int zDim = matrix.length;
+			for (int iz = 0; iz < zDim; iz++) {
+				byte[][] stack = matrix[iz];
+				int xDim = stack.length;
+				int yDim = stack[0].length;
+				byte[] array = new byte[xDim * yDim];
+				BufferedImage b = new BufferedImage(xDim, yDim, BufferedImage.TYPE_BYTE_GRAY);
+				WritableRaster r = b.getRaster();
+				for (int y = 0; y < yDim; y++) {
+					for (int x = 0; x < xDim; x++) {
+						array[y * xDim + x] = stack[x][y];
+					}
+				}			
+				r.setDataElements(0, 0, xDim, yDim, array);
+				String filename = fileName + "_layer" + iz + ".tiff";
+				ImageIO.write(b, "TIFF", new File(filename));
+				System.out.println(filename + "saved");
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
     public static byte[][] loadImage(String fileName, int xDim, int yDim, int zDim) {
 
