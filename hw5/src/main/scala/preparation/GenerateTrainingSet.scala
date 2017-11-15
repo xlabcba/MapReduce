@@ -197,23 +197,18 @@ object GenerateTrainingSet {
     .toDS()
     
     // COUNT: 57174638 / 58262400
-    // val sampleRecords = combinedRecords.orderBy(rand()).limit(sampleNo)
-    //.rdd
-    //.map{case Row(imageIdx: Int, pixelIdx: Int, label: Int, brightnessLst: List[Byte]) => (imageIdx, pixelIdx, label, brightnessLst)}
-    // .map(row => (row(1), row(2), row(3), row.getAs[List[Byte]](4)))
-    // val sampleRecords = sc.parallelize(combinedRecords.takeSample(false, sampleNo)).persist()
+    val sampleRecords = combinedRecords.orderBy(rand()).limit(sampleNo)
         
-//    val trainingRecords = sampleRecords.flatMap{case(imageIdx, pixelIdx, label, brightnessLst) => 
-//      increaseDiversity(brightnessLst, neighborSize).par.map((imageIdx, pixelIdx, label, _)).toList}
+    val trainingRecords = sampleRecords
+    .flatMap{case(imageIdx, pixelIdx, label, brightnessLst) => 
+      increaseDiversity(brightnessLst, neighborSize).par.map((imageIdx, pixelIdx, label, _)).toList}
+    .persist()
     
-    val foreground = combinedRecords.filter{t => t._3 == 1}.first()
-    val imageIndex = foreground._1
-    val (xIndex, yIndex, zIndex) = toMatrixCoord(foreground._2, sizes(imageIndex))
-    println("image: " + imageIndex + "; x: " + xIndex + "; y" + yIndex + "; z: " + zIndex)
-    LoadMultiStack.saveImages(toThreeDMatrix(foreground._4, neighborSize), "fore")
+    val foreground = trainingRecords.filter{t => t._3 == 1}.first()._4
+    LoadMultiStack.saveImages(toThreeDMatrix(foreground, neighborSize), "fore")
     
-    // val background = combinedRecords.filter{t => t._3 == 0}.first()._4
-    // LoadMultiStack.saveImages(toThreeDMatrix(background, neighborSize), "back")
+    val background = trainingRecords.filter{t => t._3 == 0}.first()._4
+    LoadMultiStack.saveImages(toThreeDMatrix(background, neighborSize), "back")
 
     //Thread.sleep(1000000000)
   }
