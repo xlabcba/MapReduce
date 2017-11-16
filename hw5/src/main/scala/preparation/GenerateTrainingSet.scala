@@ -8,6 +8,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.sql.functions.udf
 import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.Row
 import scala.collection.parallel.immutable._
@@ -131,33 +132,60 @@ object GenerateTrainingSet {
         
   def main(args: Array[String]) = {
     
+    // Constants
+    val delimitor = "-"
+    val dimensionSplitor = ","
+    
     // Parse args
-    // val input = args(0)
-    // val output = args(1)
-    // val inputImages = Array("input/1_image.tiff")
+    val inputImages = args(0)
+    val inputImgs = inputImages.split(delimitor)
+    
+    val inputDistances = args(1)
+    val inputDists = inputDistances.split(delimitor)
+    
+    val sizesBuffer = ArrayBuffer.empty[(Int, Int, Int)]
+    for (dimensions <- args(2).split(delimitor)) {
+      val array = dimensions.split(dimensionSplitor)
+      val newElement = (Integer.parseInt(array(0)), Integer.parseInt(array(1)), Integer.parseInt(array(2)))
+      sizesBuffer += newElement
+    }
+    val sizes = sizesBuffer.toArray
+    
+    var output = args(3)
+    val sampleNo = Integer.parseInt(args(4))
+    
+    val neighborNo = args(5).split(delimitor)
+    val xNum = Integer.parseInt(neighborNo(0))
+    val yNum = Integer.parseInt(neighborNo(1))
+    val zNum = Integer.parseInt(neighborNo(2))
+    val neighborSize = (xNum, yNum, zNum)
+    
+    val mode = args(6)
+    var bucketName = ""
+    if (args.length > 7) {
+      bucketName = args(7) 
+      if (mode.toLowerCase().contains("text")) {
+        output = "s3://" + bucketName + "/" + output
+      }
+    }
+    
+    // val inputImgs = Array("input/1_image.tiff")
     // val inputDists = Array("input/1_dist.tiff")
-    val inputImages = Array("input/1_image.tiff", "input/2_image.tiff", "input/3_image.tiff", "input/4_image.tiff", "input/6_image.tiff")
-    val inputDists = Array("input/1_dist.tiff", "input/2_dist.tiff", "input/3_dist.tiff", "input/4_dist.tiff", "input/6_dist.tiff")
-    val sizes = Array((512, 512, 60), (512, 512, 33), (512, 512, 44), (512, 512, 51), (512, 512, 46))
-    val neighborSize = (3, 3, 3)
-    val (xNum, yNum, zNum) = neighborSize
-    val sampleNo = 12500
-    val partitionNo = 4
-    val output = "output"
+    // val inputImgs = Array("input/1_image.tiff", "input/2_image.tiff", "input/3_image.tiff", "input/4_image.tiff", "input/6_image.tiff")
+    // val inputDists = Array("input/1_dist.tiff", "input/2_dist.tiff", "input/3_dist.tiff", "input/4_dist.tiff", "input/6_dist.tiff")
+    // val sizes = Array((512, 512, 60), (512, 512, 33), (512, 512, 44), (512, 512, 51), (512, 512, 46))
+    // val (xNum, yNum, zNum) = neighborSize
+    // val sampleNo = 12500
+    // val partitionNo = 4
+    // val bucketName = "lixiebucket"
     
     //Start the Spark context
     val conf = new SparkConf()
     .setAppName("Image Preparation")
-    //.set("spark.network.timeout", "6000s")
-    .set("spark.executor.memory", "8g")
-    //.set("spark.executor.heartbeatInterval", "60s")
     val sc = new SparkContext(conf)
     
-    val sqlContext= new org.apache.spark.sql.SQLContext(sc)
-    import sqlContext.implicits._
-    
-    val imageRDD = (0 until inputImages.length).map(i => {
-      val array = LoadMultiStack.loadImage(inputImages(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
+    val imageRDD = (0 until inputImgs.length).map(i => {
+      val array = LoadMultiStack.loadImage(bucketName, inputImgs(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
       sc.parallelize(array).zipWithIndex.map{case(stackArray, stackIdx) => ((i, stackIdx.toInt), stackArray)}
     })
     .reduce(_ union _)
@@ -166,7 +194,7 @@ object GenerateTrainingSet {
         
     val r = scala.util.Random
     val combinedRecords = (0 until inputDists.length).map(i => {
-      val array = LoadMultiStack.loadImage(inputDists(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
+      val array = LoadMultiStack.loadImage(bucketName, inputDists(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
       sc.parallelize(array).zipWithIndex.map{case(stackArray, stackIdx) => (i, stackIdx.toInt, stackArray)}
     })
     .reduce(_ union _)
@@ -195,22 +223,23 @@ object GenerateTrainingSet {
     .map{case(imageIdx, pixelIdx, distance, brightnessLst) => (imageIdx, pixelIdx, toLabel(distance), brightnessLst)}
     .filter{case(imageIdx, pixelIdx, label, brightnessLst) => label != -1}
     .filter{record => r.nextInt(200) == 0}
-    .toDS()
-    
-    // COUNT: 57174638 / 58262400
-    // println(combinedRecords.count)
-    val sampleRecords = combinedRecords.orderBy(rand()).limit(sampleNo)
-        
-    val trainingRecords = sampleRecords
-    .flatMap{case(imageIdx, pixelIdx, label, brightnessLst) => 
-      increaseDiversity(brightnessLst, neighborSize).par.map((imageIdx, pixelIdx, label, _)).toList}
     .persist(StorageLevel.MEMORY_AND_DISK)
     
-    val foreground = trainingRecords.filter{t => t._3 == 1}.first()._4
-    LoadMultiStack.saveImages(toThreeDMatrix(foreground, neighborSize), output + "/fore")
+    // COUNT: 57174638 / 58262400
+//    val sampleRecords = combinedRecords.takeSample(false, sampleNo)
+//        
+//    val trainingRecords = sc.parallelize(sampleRecords)
+//    .flatMap{case(imageIdx, pixelIdx, label, brightnessLst) => 
+//      increaseDiversity(brightnessLst, neighborSize).par.map((imageIdx, pixelIdx, label, _)).toList}
+//    .persist(StorageLevel.MEMORY_AND_DISK)
     
-    val background = trainingRecords.filter{t => t._3 == 0}.first()._4
-    LoadMultiStack.saveImages(toThreeDMatrix(background, neighborSize), output + "/back")
+    val foreground = combinedRecords.filter{t => t._3 == 1}.first()
+    LoadMultiStack.saveImages(toThreeDMatrix(foreground._4, neighborSize), bucketName, output + "/fore")
+    println("FOREGROUND: [IMAGE: " + foreground._1 + "; COORD: " + toMatrixCoord(foreground._2, sizes(foreground._1)) + "; LABEL:" + foreground._3 + "; NEIGHBORS: " + foreground._4)
+    
+    val background = combinedRecords.filter{t => t._3 == 0}.first()
+    LoadMultiStack.saveImages(toThreeDMatrix(background._4, neighborSize), bucketName, output + "/back")
+    println("BACKGROUND: [IMAGE: " + background._1 + "; COORD: " + toMatrixCoord(background._2, sizes(background._1)) + "; LABEL:" + background._3 + "; NEIGHBORS: " + background._4)
 
     //Thread.sleep(1000000000)
   }

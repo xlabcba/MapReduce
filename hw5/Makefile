@@ -8,8 +8,15 @@ jar.path=target/scala-2.11/${jar.name}
 job.name=preparation.GenerateTrainingSet
 # Number of cores to run the job in parallel
 local.master=local[*]
-local.input=input
+local.inputImgs=input/1_image.tiff
+local.inputDists=input/1_dist.tiff
+local.sizes=512,512,60-512,512,33-512,512,44-512,512,51-512,512,46
 local.output=output
+# sample records number before rotation and mirror
+local.sampleno=12500
+local.neighborSize=3-3-3
+# text or tiff
+local.mode=tiff
 # Pseudo-Cluster Execution
 hdfs.user.name=lixie
 hdfs.input=input
@@ -19,14 +26,19 @@ aws.emr.release=emr-5.5.0
 aws.region=us-east-1
 aws.bucket.name=lixiebucket
 aws.subnet.id=subnet-f1ca3cba
-aws.input=input
+# Parameters start
+aws.inputImgs=input/1_image.tiff
+aws.inputDists=input/1_dist.tiff
+aws.sizes=512,512,60-512,512,33-512,512,44-512,512,51-512,512,46
 aws.output=output
-# Number of top important page in output
-aws.topK=100
-# Switch on debug logging
-aws.debug=false
+# sample records number before rotation and mirror
+aws.sampleno=12500
+aws.neighborSize=11-11-3
+# text or tiff
+aws.mode=tiff
+# Parameters end
 aws.log.dir=log
-aws.num.nodes=10
+aws.num.nodes=5
 aws.instance.type=m4.large
 # -----------------------------------------------------------
 
@@ -44,7 +56,7 @@ clean-local-output:
 
 # Runs standalone
 alone: clean jar clean-local-output
-	${spark.root}/bin/spark-submit --driver-memory 2g --num-executors 2 --executor-cores 2 --executor-memory 1g --class ${job.name} --master ${local.master} ${jar.path} ${local.input} ${local.output} ${local.topK} ${local.debug}
+	${spark.root}/bin/spark-submit --driver-memory 2g --num-executors 2 --executor-cores 2 --executor-memory 1g --class ${job.name} --master ${local.master} ${jar.path} ${local.inputImgs} ${local.inputDists} ${local.sizes} ${local.output} ${local.sampleno} ${local.neighborSize} ${local.mode}
 
 # Start HDFS
 start-hdfs:
@@ -118,11 +130,11 @@ upload-app-aws:
 # Main EMR launch.
 cloud: clean jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "Spark Wiki Page Rank Cluster" \
+		--name "Spark Training Data Preparation Cluster" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 		--applications Name=Spark \
-		--steps '[{"Name":"Spark Page Rank","Args":["spark-submit","--deploy-mode","cluster","--class","${job.name}","--master","yarn","s3://${aws.bucket.name}/${jar.name}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.output}","${aws.topK}","${aws.debug}"],"Type":"CUSTOM_JAR","Jar":"command-runner.jar","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
+		--steps '[{"Name":"Spark Page Rank","Args":["spark-submit","--deploy-mode","cluster","--class","${job.name}","--master","yarn","s3://${aws.bucket.name}/${jar.name}","${aws.inputImgs}","${aws.inputDists}","${aws.sizes}","${aws.output}","${aws.sampleno}","${aws.neighborSize}","${aws.mode}","${aws.bucket.name}"],"Type":"CUSTOM_JAR","Jar":"command-runner.jar","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
 		--log-uri s3://${aws.bucket.name}/${aws.log.dir} \
 		--service-role EMR_DefaultRole \
 		--ec2-attributes InstanceProfile=EMR_EC2_DefaultRole,SubnetId=${aws.subnet.id} \
