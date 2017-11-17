@@ -180,14 +180,14 @@ object GenerateTrainingSet {
     
     import spark.implicits._
     
-    val imageRddSeq = (0 until inputImgs.length).map(i => {
+    val imageRddSeq = (0 until inputImgs.length).flatMap(i => {
       val array = LoadMultiStack.loadImage(bucketName, inputImgs(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
-      sc.parallelize(array).zipWithIndex.map{case(stackArray, stackIdx) => ((i, stackIdx.toInt), stackArray)}
+      array.zipWithIndex.par.map{case(stackArray, stackIdx) => ((i, stackIdx.toInt), stackArray)}
     })
     
-    val imageRddUnion = sc.union(imageRddSeq)
+    //val imageRddUnion = sc.union(imageRddSeq)
     
-    val imageMap = sc.broadcast(imageRddUnion.collectAsMap)
+    val imageMap = sc.broadcast(imageRddSeq.toMap)
         
     val distRddSeq = (0 until inputDists.length).map(i => {
       val array = LoadMultiStack.loadImage(bucketName, inputDists(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
