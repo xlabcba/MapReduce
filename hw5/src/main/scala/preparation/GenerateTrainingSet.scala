@@ -1,22 +1,21 @@
 package preparation
 
-import org.apache.spark.SparkConf
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.sql.functions.udf
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.SaveMode
-import org.apache.spark.sql.Row
 import scala.collection.parallel.immutable._
 
 import fileLoader.LoadMultiStack
 
 object GenerateTrainingSet {      
-  
+    
+  case class TrainRecord(imageIdx: Int, pixelIdx: Int, label: Int, brightnesses: Array[Byte])
+
+  case class TrainRecordOutput(imageIdx: Int, pixelIdx: Int, label: Int, brightnesses: List[Byte])
+
   def toMatrixCoord(index: Int, imageSize: (Int, Int, Int)) : (Int, Int, Int) = {
     val (xDim, yDim, zDim) = imageSize;
     val z = index / (xDim * yDim)
@@ -42,11 +41,11 @@ object GenerateTrainingSet {
     else return -1
   }
   
-  def findNeighbors(i: Int, neighborSize: (Int, Int, Int), imageSize: (Int, Int, Int)) : List[Int] = {
+  def findNeighbors(i: Int, neighborSize: (Int, Int, Int), imageSize: (Int, Int, Int)) : Array[Int] = {
     val (xNum, yNum, zNum) = neighborSize
     val (xDim, yDim, zDim) = imageSize
     val (x, y, z) = toMatrixCoord(i, imageSize)
-    val res = ListBuffer.empty[Int]
+    val res = ArrayBuffer.empty[Int]
     for (dx <- -(xNum / 2) to (xNum / 2)) {
       for (dy <- -(yNum / 2) to (yNum / 2)) {
         val (nx, ny) = (x + dx, y + dy)
@@ -55,7 +54,7 @@ object GenerateTrainingSet {
         }
       }
     }
-    res.toList
+    res.toArray
   }
   
   def isValidPixel(x: Int, y: Int, z: Int, imageSize: (Int, Int, Int)) : Boolean = {
@@ -67,21 +66,21 @@ object GenerateTrainingSet {
     stackIdx >= zNum / 2 && stackIdx < zDim - zNum / 2
   }
   
-  def increaseDiversity(neighbor: List[Byte], neighborSize: (Int, Int, Int)) : List[List[Byte]] = {
+  def increaseDiversity(neighbor: Array[Byte], neighborSize: (Int, Int, Int)) : Array[Array[Byte]] = {
     var (xNum, yNum, zNum) = neighborSize
-    val res = ListBuffer.empty[List[Byte]]
+    val res = ArrayBuffer.empty[Array[Byte]]
     
     var prevRotate = toThreeDMatrix(neighbor, neighborSize)
     res += neighbor
-    res += toOneDArray(mirror(prevRotate, (xNum, yNum, zNum)), (xNum, yNum, zNum)).toList
+    res += toOneDArray(mirror(prevRotate, (xNum, yNum, zNum)), (xNum, yNum, zNum)).toArray
     for (i <- 1 to 3) {
       val currRotate = rotate(prevRotate, (xNum, yNum, zNum))
       val tmp = xNum; xNum = yNum; yNum = tmp;
-      res += toOneDArray(currRotate, (xNum, yNum, zNum)).toList
-      res += toOneDArray(mirror(currRotate, (xNum, yNum, zNum)), (xNum, yNum, zNum)).toList
+      res += toOneDArray(currRotate, (xNum, yNum, zNum)).toArray
+      res += toOneDArray(mirror(currRotate, (xNum, yNum, zNum)), (xNum, yNum, zNum)).toArray
       prevRotate = currRotate
     }
-    res.toList 
+    res.toArray 
   }
   
   def rotate(matrix: Array[Array[Array[Byte]]], neighborSize: (Int, Int, Int)) : Array[Array[Array[Byte]]] = {
@@ -110,7 +109,7 @@ object GenerateTrainingSet {
     res
   }
   
-  def toThreeDMatrix(array: List[Byte], neighborSize: (Int, Int, Int)) : Array[Array[Array[Byte]]] = {
+  def toThreeDMatrix(array: Array[Byte], neighborSize: (Int, Int, Int)) : Array[Array[Array[Byte]]] = {
     val (xNum, yNum, zNum) = neighborSize
     val res = Array.ofDim[Byte](zNum, xNum, yNum)   
     for (i <- 0 until xNum * yNum * zNum) {
@@ -120,14 +119,14 @@ object GenerateTrainingSet {
     res
   }
   
-  def toOneDArray(matrix: Array[Array[Array[Byte]]], neighborSize: (Int, Int, Int)) : List[Byte] = {
+  def toOneDArray(matrix: Array[Array[Array[Byte]]], neighborSize: (Int, Int, Int)) : Array[Byte] = {
     val (xNum, yNum, zNum) = neighborSize
     val res = Array.ofDim[Byte](xNum * yNum * zNum)  
     for (i <- 0 until xNum * yNum * zNum) {
       val (z, y, x) = toMatrixCoord(i, (zNum, yNum, xNum))
       res(i) = matrix(z)(x)(y)
     }
-    res.toList
+    res.toArray
   }
         
   def main(args: Array[String]) = {
@@ -169,42 +168,43 @@ object GenerateTrainingSet {
       }
     }
     
-    // val inputImgs = Array("input/1_image.tiff")
-    // val inputDists = Array("input/1_dist.tiff")
-    // val inputImgs = Array("input/1_image.tiff", "input/2_image.tiff", "input/3_image.tiff", "input/4_image.tiff", "input/6_image.tiff")
-    // val inputDists = Array("input/1_dist.tiff", "input/2_dist.tiff", "input/3_dist.tiff", "input/4_dist.tiff", "input/6_dist.tiff")
-    // val sizes = Array((512, 512, 60), (512, 512, 33), (512, 512, 44), (512, 512, 51), (512, 512, 46))
-    // val (xNum, yNum, zNum) = neighborSize
-    // val sampleNo = 12500
-    // val partitionNo = 4
-    // val bucketName = "lixiebucket"
-    
     //Start the Spark context
-    val conf = new SparkConf()
-    .setAppName("Image Preparation")
-    val sc = new SparkContext(conf)
+//    val conf = new SparkConf()
+//    .setAppName("Image Preparation")
+//    val sc = new SparkContext(conf)
+    val spark = SparkSession
+    .builder()
+    .appName("Image Preparation")
+    .getOrCreate()
+    val sc = spark.sparkContext
     
-    val imageRDD = (0 until inputImgs.length).map(i => {
+    import spark.implicits._
+    
+    val imageRddSeq = (0 until inputImgs.length).map(i => {
       val array = LoadMultiStack.loadImage(bucketName, inputImgs(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
       sc.parallelize(array).zipWithIndex.map{case(stackArray, stackIdx) => ((i, stackIdx.toInt), stackArray)}
     })
-    .reduce(_ union _)
     
-    val imageMap = sc.broadcast(imageRDD.collectAsMap)
+    val imageRddUnion = sc.union(imageRddSeq)
+    
+    val imageMap = sc.broadcast(imageRddUnion.collectAsMap)
         
-    val r = scala.util.Random
-    val combinedRecords = (0 until inputDists.length).map(i => {
+    val distRddSeq = (0 until inputDists.length).map(i => {
       val array = LoadMultiStack.loadImage(bucketName, inputDists(i), sizes(i)._1, sizes(i)._2, sizes(i)._3)
       sc.parallelize(array).zipWithIndex.map{case(stackArray, stackIdx) => (i, stackIdx.toInt, stackArray)}
     })
-    .reduce(_ union _)
+    
+    val distRddUnion = sc.union(distRddSeq)
+    
+    val r = scala.util.Random
+    val combinedRecordsRDD = distRddUnion
     .filter{case(imageIdx, stackIdx, stackArray) => isValidStack(stackIdx, neighborSize._3, sizes(imageIdx)._3)}
     .flatMap{case(imageIdx, stackIdx, stackArray) => {
       val (xDim, yDim, zDim) = sizes(imageIdx)
       val offset = stackIdx * xDim * yDim 
       stackArray.zipWithIndex.par
       .map{case(distance, i) => {
-        val resLst = ListBuffer.empty[Byte]
+        val resLst = ArrayBuffer.empty[Byte]
         val neighborLst = findNeighbors(i, neighborSize, sizes(imageIdx))
         if (neighborLst.length == xNum * yNum) {
           for (neighbor <- neighborLst) {
@@ -214,32 +214,41 @@ object GenerateTrainingSet {
             }
           }
         }
-        (imageIdx, i + offset, distance, resLst.toList)
+        (imageIdx, i + offset, distance, resLst.toArray)
       }}
       .filter{case(imageIdx, stackIdx, distance, neighborLst) 
         => neighborLst.length == xNum * yNum * zNum}
       .toList
     }}
-    .map{case(imageIdx, pixelIdx, distance, brightnessLst) => (imageIdx, pixelIdx, toLabel(distance), brightnessLst)}
-    .filter{case(imageIdx, pixelIdx, label, brightnessLst) => label != -1}
+    .map{case(imageIdx, pixelIdx, distance, brightnessLst) => TrainRecord(imageIdx, pixelIdx, toLabel(distance), brightnessLst)}
+    .filter{record => record.label != -1}
     .filter{record => r.nextInt(200) == 0}
-    .persist(StorageLevel.MEMORY_AND_DISK)
+    // .persist(StorageLevel.MEMORY_AND_DISK)
+    
+    val combinedRecords = spark.createDataset(combinedRecordsRDD)
     
     // COUNT: 57174638 / 58262400
-//    val sampleRecords = combinedRecords.takeSample(false, sampleNo)
-//        
-//    val trainingRecords = sc.parallelize(sampleRecords)
-//    .flatMap{case(imageIdx, pixelIdx, label, brightnessLst) => 
-//      increaseDiversity(brightnessLst, neighborSize).par.map((imageIdx, pixelIdx, label, _)).toList}
-//    .persist(StorageLevel.MEMORY_AND_DISK)
-    
-    val foreground = combinedRecords.filter{t => t._3 == 1}.first()
-    LoadMultiStack.saveImages(toThreeDMatrix(foreground._4, neighborSize), bucketName, output + "/fore")
-    println("FOREGROUND: [IMAGE: " + foreground._1 + "; COORD: " + toMatrixCoord(foreground._2, sizes(foreground._1)) + "; LABEL:" + foreground._3 + "; NEIGHBORS: " + foreground._4)
-    
-    val background = combinedRecords.filter{t => t._3 == 0}.first()
-    LoadMultiStack.saveImages(toThreeDMatrix(background._4, neighborSize), bucketName, output + "/back")
-    println("BACKGROUND: [IMAGE: " + background._1 + "; COORD: " + toMatrixCoord(background._2, sizes(background._1)) + "; LABEL:" + background._3 + "; NEIGHBORS: " + background._4)
+    val sampleRecords = combinedRecords
+    .orderBy(rand()).limit(sampleNo)
+        
+    val trainingRecords = sampleRecords
+    .flatMap{record => 
+      increaseDiversity(record.brightnesses, neighborSize).par.map(n => TrainRecord(record.imageIdx, record.pixelIdx, record.label, n)).toList}
+    .persist(StorageLevel.MEMORY_AND_DISK)
+
+    if (mode.equalsIgnoreCase("tiff")) {
+      val foreground = trainingRecords.filter { r => r.label == 1 }.first()
+      LoadMultiStack.saveImages(toThreeDMatrix(foreground.brightnesses, neighborSize), bucketName, output + "/fore")
+      println("FOREGROUND: [IMAGE: " + foreground.imageIdx + "; COORD: " + toMatrixCoord(foreground.pixelIdx, sizes(foreground.imageIdx)))
+
+      val background = trainingRecords.filter { t => t.label == 0 }.first()
+      LoadMultiStack.saveImages(toThreeDMatrix(background.brightnesses, neighborSize), bucketName, output + "/back")
+      println("BACKGROUND: [IMAGE: " + background.imageIdx + "; COORD: " + toMatrixCoord(background.pixelIdx, sizes(background.imageIdx)))
+    } else {
+      trainingRecords
+      .map(r => TrainRecordOutput(r.imageIdx, r.pixelIdx, r.label, r.brightnesses.toList))
+      .write.format("org.apache.spark.sql.json").mode(SaveMode.Append).save(output)
+    }
 
     //Thread.sleep(1000000000)
   }
