@@ -8,8 +8,8 @@ jar.path=target/scala-2.11/${jar.name}
 job.name=preparation.GenerateTrainingSet
 # Number of cores to run the job in parallel
 local.master=local[*]
-local.inputImgs=input/1_image.tiff
-local.inputDists=input/1_dist.tiff
+local.inputImgs=input/1_image.tiff-input/2_image.tiff-input/3_image.tiff-input/4_image.tiff-input/6_image.tiff
+local.inputDists=input/1_dist.tiff-input/2_dist.tiff-input/3_dist.tiff-input/4_dist.tiff-input/6_dist.tiff
 local.sizes=512,512,60-512,512,33-512,512,44-512,512,51-512,512,46
 local.output=output
 # sample records number before rotation and mirror
@@ -27,18 +27,24 @@ aws.region=us-east-1
 aws.bucket.name=lixiebucket
 aws.subnet.id=subnet-f1ca3cba
 # Parameters start
-aws.inputImgs=input/1_image.tiff
-aws.inputDists=input/1_dist.tiff
+# Image file paths, separated by -
+aws.inputImgs=input/1_image.tiff-input/2_image.tiff-input/3_image.tiff-input/4_image.tiff-input/6_image.tiff
+# Distance file paths, separated by -
+aws.inputDists=input/1_dist.tiff-input/2_dist.tiff-input/3_dist.tiff-input/4_dist.tiff-input/6_dist.tiff
+# Image sizes x,y,z, separated by -
 aws.sizes=512,512,60-512,512,33-512,512,44-512,512,51-512,512,46
 aws.output=output
 # sample records number before rotation and mirror
-aws.sampleno=12500
-aws.neighborSize=11-11-3
+aws.sampleno=25
+# x-y-z
+aws.neighborSize=21-21-7
 # text or tiff
-aws.mode=tiff
+aws.mode=text
 # Parameters end
+# Please define other proper spark setting
+# According to your need
 aws.log.dir=log
-aws.num.nodes=5
+aws.num.nodes=10
 aws.instance.type=m4.large
 # -----------------------------------------------------------
 
@@ -134,7 +140,7 @@ cloud: clean jar upload-app-aws delete-output-aws
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 		--applications Name=Spark \
-		--steps '[{"Name":"Spark Page Rank","Args":["spark-submit","--deploy-mode","cluster","--class","${job.name}","--master","yarn","s3://${aws.bucket.name}/${jar.name}","${aws.inputImgs}","${aws.inputDists}","${aws.sizes}","${aws.output}","${aws.sampleno}","${aws.neighborSize}","${aws.mode}","${aws.bucket.name}"],"Type":"CUSTOM_JAR","Jar":"command-runner.jar","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
+		--steps '[{"Name":"Spark Page Rank","Args":["spark-submit","--deploy-mode","cluster","--class","${job.name}","--master","yarn","--conf","spark.executor.cores=4","--conf","spark.executor.memory=5g","--conf","spark.driver.memory=5g","--conf","spark.default.parallelism=200","s3://${aws.bucket.name}/${jar.name}","${aws.inputImgs}","${aws.inputDists}","${aws.sizes}","${aws.output}","${aws.sampleno}","${aws.neighborSize}","${aws.mode}","${aws.bucket.name}"],"Type":"CUSTOM_JAR","Jar":"command-runner.jar","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
 		--log-uri s3://${aws.bucket.name}/${aws.log.dir} \
 		--service-role EMR_DefaultRole \
 		--ec2-attributes InstanceProfile=EMR_EC2_DefaultRole,SubnetId=${aws.subnet.id} \
