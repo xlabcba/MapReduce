@@ -2,9 +2,14 @@
 
 ## Overview
 
-We use sbt to compile our source code.
+This is a project to do Machine Learning on brain scan dataset by using Spark MLlib with different model (Logistic Regression/Random Forest/Naive Bayes) ensembling. The data is pretained by preprocess with format as 
+
+	input: 27 * 27 * 11 neighbors brightness features separated by comma
+	output: followed by a label 
 
 ## How to use makefile
+
+We use sbt to compile our source code.
 
 Use `make alone` to train on small data set locally.
 
